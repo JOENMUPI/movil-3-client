@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "MangaStation",
-    "slug": "MangaStation",
+    "name": "FakedIn",
+    "slug": "FakedIn",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/thumb-350-1076006.png",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/fondo2.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
