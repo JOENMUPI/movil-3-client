@@ -30,8 +30,8 @@ const SignIn = ({ navigation }) => {
             } else { 
                 switch(data.typeResponse) {
                     case 'Success':  
-                        await AsyncStorage.setItem('token', data.body.token); console.log('well done!');
-                        //navigation.navigate('Home'); 
+                        await AsyncStorage.setItem('token', data.body.token); 
+                        navigation.navigate('Tabs'); 
                         break;
                 
                     case 'Fail':

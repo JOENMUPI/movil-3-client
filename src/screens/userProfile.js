@@ -9,7 +9,7 @@ import {
 
 import { Icon } from 'react-native-elements';
 
-const Home = ({ navigation, route }) => { 
+const UserProfile = ({ navigation, route }) => { 
     return (
         <View style={{ marginTop: 24, backgroundColor: 'green', flex: 1 }}>
             <View 
@@ -20,10 +20,10 @@ const Home = ({ navigation, route }) => {
                     backgroundColor: 'gold',
                 }}
                 >
-                <Text>home</Text>
-            </View> 
+                <Text>UserProfile</Text>
+            </View>
         </View>
     )
 }
 
-export default Home
+export default UserProfile
