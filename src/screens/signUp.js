@@ -7,7 +7,6 @@ import {
     TouchableOpacity, 
     Alert, 
     ActivityIndicator,
-    Image 
 } from 'react-native';
 
 import { Icon, Avatar, CheckBox } from 'react-native-elements'

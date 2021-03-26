@@ -13,35 +13,36 @@ const OPTION = {
 }
 
 const SCREEN_OPTIONS = ({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-            let iconName;
+    tabBarIcon: ({ focused, color, size }) => {
+        let iconName;
 
-            switch(route.name) {
-                    case 'Home':
-                        if (route.name === 'Home') {
-                            (focused)
-                            ? iconName = 'home'
-                            : iconName = 'home-outline';
-                        }
-                        break;
-                    case 'UserProfile':
-                        if (route.name === 'UserProfile') {
-                            (focused)
-                            ? iconName = 'person-circle'
-                            : iconName = 'person-circle-outline';
-                        }
-            }
-           
-            return (
-                <Icon
-                    name={iconName}
-                    color={color}
-                    type='ionicon'
-                    size={size}
-                />
-            ) 
+        switch(route.name) {
+            case 'Home':
+                if (route.name === 'Home') {
+                    (focused)
+                    ? iconName = 'home'
+                    : iconName = 'home-outline';
+                }
+                break;
+            case 'UserProfile':
+                if (route.name === 'UserProfile') {
+                    (focused)
+                    ? iconName = 'person-circle'
+                    : iconName = 'person-circle-outline';
+                }
+                break;
         }
-      })
+        
+        return (
+            <Icon
+                name={iconName}
+                color={color}
+                type='ionicon'
+                size={size}
+            />
+        ) 
+    }
+})
 
 
 export default function App() {

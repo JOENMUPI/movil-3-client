@@ -7,8 +7,6 @@ import {
     ScrollView 
 } from 'react-native';
 
-import { Icon } from 'react-native-elements';
-
 const Home = ({ navigation, route }) => { 
     return (
         <View style={{ marginTop: 24, backgroundColor: 'green', flex: 1 }}>
