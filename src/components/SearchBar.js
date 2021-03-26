@@ -87,7 +87,7 @@ const SearchBarC = ({ arrayData, vissible, onCancel, onPressItem }) => {
                 style = {{ paddingTop: 10, paddingHorizontal: 16, backgroundColor: '#f4f6fc' }}
                 data={data}
                 renderItem={renderItem}
-                keyExtractor={item => item.id}
+                keyExtractor={item => item.id.toString()}
             />
         </Modal>
     )

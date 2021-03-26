@@ -22,7 +22,7 @@ const SignIn = ({ navigation }) => {
             Alert.alert('Empty Field', 'Please, fill the fields');
             
         } else {
-            const data = await Http.send('POST', 'user/singin', user);
+            const data = await Http.send('POST', 'user/singin', user, null);
         
             if(!data) {
                 Alert.alert('Fatal Error', 'No data from server...');
@@ -30,8 +30,8 @@ const SignIn = ({ navigation }) => {
             } else { 
                 switch(data.typeResponse) {
                     case 'Success':  
-                        await AsyncStorage.setItem("user", JSON.stringify(data.body[0]));
-                        navigation.navigate('Home', data.body[0]);
+                        await AsyncStorage.setItem('token', data.body.token); console.log('well done!');
+                        //navigation.navigate('Home'); 
                         break;
                 
                     case 'Fail':
