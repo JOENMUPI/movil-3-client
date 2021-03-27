@@ -8,14 +8,13 @@ import {
     StyleSheet,
 } from 'react-native';
 import { ListItem, Divider, Button } from 'react-native-elements'
-import { useTheme } from 'react-native-paper';
+import { useTheme, Avatar } from 'react-native-paper';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 import BottomSheet from 'reanimated-bottom-sheet';
 import Animated from 'react-native-reanimated';
-
 
 const userDetails = () => {
 
@@ -40,61 +39,47 @@ const userDetails = () => {
                 callbackNode={this.fall}
                 enabledGestureInteraction={true}
             />
-            <Animated.View style={{
+            <View style={{
                 margin: 20,
-                opacity: Animated.add(0.1, Animated.multiply(this.fall, 1.0)),
+
             }}>
                 <View style={{ alignItems: 'center' }}>
                     <TouchableOpacity onPress={() => this.bs.current.snapTo(0)}>
                         <View
                             style={{
-                                height: 100,
-                                width: 100,
+                                height: 150,
+                                width: 150,
                                 borderRadius: 15,
-                                justifyContent: 'center',
-                                alignItems: 'center',
+                                justifyContent: 'flex-end',
+                                alignItems: 'baseline',
                             }}>
-                            <ImageBackground
-                                source={{
-                                    uri: image,
-                                }}
-                                style={{ height: 100, width: 100 }}
-                                imageStyle={{ borderRadius: 15 }}>
-                                <View
-                                    style={{
-                                        flex: 1,
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                    }}>
-                                    <Icon
-                                        name="camera"
-                                        size={35}
-                                        color="#fff"
-                                        style={{
-                                            opacity: 0.7,
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            borderWidth: 1,
-                                            borderColor: '#fff',
-                                            borderRadius: 10,
-                                        }}
-                                    />
-                                </View>
-                            </ImageBackground>
+                            <Avatar.Image size={100} source={require('../image/images.png')} />
+
                         </View>
                     </TouchableOpacity>
-                    <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
-                        <ListItem.Title>Pedro Pancho</ListItem.Title>
+                    <ListItem style={{
+                        marginTop: 10, fontSize: 18, fontWeight: 'bold', flex: 1,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}>
+                        <ListItem.Title styl={{ flexDirection: 'column', marginTop: 10, fontSize: 20, }}>Pedro Pancho</ListItem.Title>
 
                     </ListItem>
                 </View>
                 <View>
+
                     <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
                         <ListItem.Title>Ingerio de pala</ListItem.Title>
-
+                        <Text style={{ fontWeight: "bold" }}>Help</Text>
+                        <Text>uru</Text>
+                        <ListItem.Subtitle Style={{ flex: 1, flexDirection: 'column' }}>HELP</ListItem.Subtitle>
                     </ListItem>
-                </View>
 
+                </View>
+                <View>
+                    <ListItem.Title>uru</ListItem.Title>
+                </View>
                 <View>
                     <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
                         <ListItem.Title>Universidad</ListItem.Title>
@@ -111,6 +96,7 @@ const userDetails = () => {
                 <View>
                     <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
                         <ListItem.Title>Description</ListItem.Title>
+
                         <Button
                             title="Connect"
                             type="solid"
@@ -200,7 +186,7 @@ const userDetails = () => {
                 <TouchableOpacity style={styles.commandButton} onPress={() => { }}>
                     <Text style={styles.panelButtonTitle}>Submit</Text>
                 </TouchableOpacity>
-            </Animated.View>
+            </View>
         </View>
     );
 };
@@ -294,3 +280,4 @@ const styles = StyleSheet.create({
         color: '#05375a',
     },
 });
+    
