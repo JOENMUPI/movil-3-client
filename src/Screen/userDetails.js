@@ -7,12 +7,11 @@ import {
     TextInput,
     StyleSheet,
 } from 'react-native';
-
+import { ListItem, Divider, Button } from 'react-native-elements'
 import { useTheme } from 'react-native-paper';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import Feather from 'react-native-vector-icons/Feather';
 
 import BottomSheet from 'reanimated-bottom-sheet';
 import Animated from 'react-native-reanimated';
@@ -22,7 +21,14 @@ const userDetails = () => {
 
     const [image] = useState('https://api.adorable.io/avatars/80/abott@adorable.png');
     const { colors } = useTheme();
+    const list = [{
+        name: 'english', lvl: 'basic',
+        name: 'espanol', lvl: 'native',
+        educacion: 'uru',
+        award: 'jugar',
+        skills: 'comer',
 
+    }]
     return (
         <View style={styles.container}>
             <BottomSheet
@@ -77,97 +83,119 @@ const userDetails = () => {
                             </ImageBackground>
                         </View>
                     </TouchableOpacity>
-                    <Text style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
-                        John Doe
-          </Text>
+                    <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
+                        <ListItem.Title>Pedro Pancho</ListItem.Title>
+
+                    </ListItem>
+                </View>
+                <View>
+                    <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
+                        <ListItem.Title>Ingerio de pala</ListItem.Title>
+
+                    </ListItem>
                 </View>
 
-                <View style={styles.action}>
-                    <FontAwesome name="user-o" color={colors.text} size={20} />
-                    <TextInput
-                        placeholder=" Name"
-                        placeholderTextColor="#666666"
-                        autoCorrect={false}
-                        style={[
-                            styles.textInput,
-                            {
-                                color: colors.text,
-                            },
-                        ]}
-                    />
-                </View>
-                <View style={styles.action}>
-                    <FontAwesome name="user-o" color={colors.text} size={20} />
-                    <TextInput
-                        placeholder="Last Name"
-                        placeholderTextColor="#666666"
-                        autoCorrect={false}
-                        style={[
-                            styles.textInput,
-                            {
-                                color: colors.text,
-                            },
-                        ]}
-                    />
-                </View>
+                <View>
+                    <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
+                        <ListItem.Title>Universidad</ListItem.Title>
 
-                <View style={styles.action}>
-                    <FontAwesome name="envelope-o" color={colors.text} size={20} />
-                    <TextInput
-                        placeholder="Email"
-                        placeholderTextColor="#666666"
-                        keyboardType="email-address"
-                        autoCorrect={false}
-                        style={[
-                            styles.textInput,
-                            {
-                                color: colors.text,
-                            },
-                        ]}
-                    />
+                    </ListItem>
                 </View>
-                <View style={styles.action}>
-                    <FontAwesome name="globe" color={colors.text} size={20} />
-                    <TextInput
-                        placeholder="Country"
-                        placeholderTextColor="#666666"
-                        autoCorrect={false}
-                        style={[
-                            styles.textInput,
-                            {
-                                color: colors.text,
-                            },
-                        ]}
-                    />
+                <View>
+                    <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
+                        <ListItem.Title>Venezuela</ListItem.Title>
+                        <ListItem.Subtitle> 10 Contactos</ListItem.Subtitle>
+
+                    </ListItem>
                 </View>
-                <View style={styles.action}>
-                    <Icon name="map-marker-outline" color={colors.text} size={20} />
-                    <TextInput
-
-                        placeholder="City"
-                        placeholderTextColor="#666666"
-                        autoCorrect={false}
-                        style={[
-                            styles.textInput,
-                            {
-                                color: colors.text,
-                            },
-                        ]}
-                    />
+                <View>
+                    <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
+                        <ListItem.Title>Description</ListItem.Title>
+                        <Button
+                            title="Connect"
+                            type="solid"
+                        />
+                    </ListItem>
                 </View>
-                <View style={styles.action}>
+                <View>
+                    <View>
+                        <ListItem.Title>Leguange</ListItem.Title>
 
-                    <TextInput
-                        placeholder="Description"
-                        editable
+                        {
 
-                        style={[
-                            styles.textInput,
-                            {
-                                color: colors.text,
-                            },
-                        ]}
-                    />
+                            list.map((l, i) => (
+                                <ListItem key={i} bottomDivider>
+
+                                    <ListItem.Content>
+                                        <ListItem.Title>{l.name} {l.lvl}</ListItem.Title>
+                                        <Divider style={{ backgroundColor: 'blue' }} />
+                                        <Button
+                                            title="See all"
+                                            type="outline"
+                                        />
+                                    </ListItem.Content>
+                                </ListItem>
+                            ))
+                        }
+                    </View>
+                    <View>
+                        <ListItem.Title>Education</ListItem.Title>
+
+                        {
+
+                            list.map((l, i) => (
+                                <ListItem key={i} bottomDivider>
+
+                                    <ListItem.Content>
+                                        <ListItem.Title>{l.educacion}</ListItem.Title>
+                                        <Divider style={{ backgroundColor: 'blue' }} />
+                                        <Button
+                                            title="See all"
+                                            type="outline"
+                                        />
+                                    </ListItem.Content>
+                                </ListItem>
+                            ))
+                        }
+                    </View>
+                    <View>
+                        <ListItem.Title>Award</ListItem.Title>
+
+                        {
+                            list.map((l, i) => (
+                                <ListItem key={i} bottomDivider>
+
+                                    <ListItem.Content>
+                                        <ListItem.Title>{l.award}</ListItem.Title>
+                                        <Divider style={{ backgroundColor: 'blue' }} />
+                                        <Button
+                                            title="See all"
+                                            type="outline"
+                                        />
+                                    </ListItem.Content>
+                                </ListItem>
+                            ))
+                        }
+                    </View>
+                    <View>
+                        <ListItem.Title>Skills</ListItem.Title>
+
+                        {
+                            list.map((l, i) => (
+                                <ListItem key={i} bottomDivider>
+
+                                    <ListItem.Content>
+                                        <ListItem.Title>{l.skills}</ListItem.Title>
+                                        <Divider style={{ backgroundColor: 'blue' }} />
+                                        <Button
+                                            title="See all"
+                                            type="outline"
+                                        />
+                                    </ListItem.Content>
+                                </ListItem>
+                            ))
+                        }
+                    </View>
                 </View>
                 <TouchableOpacity style={styles.commandButton} onPress={() => { }}>
                     <Text style={styles.panelButtonTitle}>Submit</Text>
