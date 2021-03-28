@@ -3,18 +3,11 @@ import {
     View,
     Text,
     TouchableOpacity,
-    ImageBackground,
-    TextInput,
     StyleSheet,
 } from 'react-native';
-import { ListItem, Divider, Button } from 'react-native-elements'
-import { useTheme, Avatar } from 'react-native-paper';
-
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import FontAwesome from 'react-native-vector-icons/FontAwesome';
-
+import { ListItem, Divider, Button, Avatar, useTheme } from 'react-native-elements'
 import BottomSheet from 'reanimated-bottom-sheet';
-import Animated from 'react-native-reanimated';
+
 
 const userDetails = () => {
 
@@ -44,7 +37,7 @@ const userDetails = () => {
 
             }}>
                 <View style={{ alignItems: 'center' }}>
-                    <TouchableOpacity onPress={() => this.bs.current.snapTo(0)}>
+                    <TouchableOpacity>
                         <View
                             style={{
                                 height: 150,
@@ -53,7 +46,7 @@ const userDetails = () => {
                                 justifyContent: 'flex-end',
                                 alignItems: 'baseline',
                             }}>
-                            <Avatar.Image size={100} source={require('../image/images.png')} />
+                            <Avatar size={100} source={require('../image/images.png')} />
 
                         </View>
                     </TouchableOpacity>
@@ -72,36 +65,36 @@ const userDetails = () => {
                     <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
                         <ListItem.Title>Ingerio de pala</ListItem.Title>
                         <Text style={{ fontWeight: "bold" }}>Help</Text>
-                        <Text>uru</Text>
-                        <ListItem.Subtitle Style={{ flex: 1, flexDirection: 'column' }}>HELP</ListItem.Subtitle>
+
+
                     </ListItem>
 
                 </View>
                 <View>
-                    <ListItem.Title>uru</ListItem.Title>
-                </View>
-                <View>
-                    <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
-                        <ListItem.Title>Universidad</ListItem.Title>
+                    <ListItem>
+                        <Text>Universidad</Text>
 
                     </ListItem>
                 </View>
                 <View>
-                    <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
-                        <ListItem.Title>Venezuela</ListItem.Title>
-                        <ListItem.Subtitle> 10 Contactos</ListItem.Subtitle>
-
+                    <ListItem>
+                        <Text>
+                            10 Contactos
+                    </Text>
                     </ListItem>
                 </View>
                 <View>
                     <ListItem style={{ marginTop: 10, fontSize: 18, fontWeight: 'bold' }}>
                         <ListItem.Title>Description</ListItem.Title>
 
+
+                    </ListItem>
+                    <View>
                         <Button
                             title="Connect"
                             type="solid"
                         />
-                    </ListItem>
+                    </View>
                 </View>
                 <View>
                     <View>
@@ -280,4 +273,3 @@ const styles = StyleSheet.create({
         color: '#05375a',
     },
 });
-    
