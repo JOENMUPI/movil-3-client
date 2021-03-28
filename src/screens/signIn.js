@@ -31,6 +31,7 @@ const SignIn = ({ navigation }) => {
                 switch(data.typeResponse) {
                     case 'Success':  
                         await AsyncStorage.setItem('token', data.body.token); 
+                        await AsyncStorage.setItem('img', data.body.img); 
                         navigation.navigate('Tabs'); 
                         break;
                 

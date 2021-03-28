@@ -1,10 +1,7 @@
-import React from 'react'; 
+import React, { useState, useEffect } from 'react'; 
 import { 
     View, 
     Text, 
-    TouchableOpacity, 
-    Alert, 
-    ScrollView 
 } from 'react-native';
 
 const Home = ({ navigation, route }) => { 
@@ -18,7 +15,7 @@ const Home = ({ navigation, route }) => {
                     backgroundColor: 'gold',
                 }}
                 >
-                <Text>home</Text>
+                <Text>Home (working..)</Text>
             </View> 
         </View>
     )

@@ -39,7 +39,7 @@ export const signUpStyles = StyleSheet.create({
         paddingTop: 10,
     },
 
-    textInput: {
+    textInput: {    
         color: "gray",
         paddingLeft: 10
     },
