@@ -19,7 +19,7 @@ const CAMERA_ICON = {
     name: 'camera-outline', 
     color: 'white', 
     type: 'ionicon', 
-    size: 20 
+    size: 100 
 }
 
 
@@ -29,7 +29,7 @@ const Home = ({ navigation, route }) => {
     const [searchBar, setSearchBar] = useState(false);
     
     getImg = async () => {
-        return JSON.parse(await AsyncStorage.getItem('user')).img;
+        return await AsyncStorage.getItem('img');
     }
 
     useEffect(() => {
@@ -48,13 +48,13 @@ const Home = ({ navigation, route }) => {
                         size="small"
                         containerStyle={homeStyles.avatarContainer}
                         icon={CAMERA_ICON} 
-                        onPress={() => navigation.navigate('UserProfile', { userId: 'me' })}
+                        onPress={() => navigation.navigate('UserProfile')}
                     />
                     : <Avatar 
                         rounded 
                         size="small" 
                         source={{ uri: `data:image/png;base64,${img}` }}
-                        onPress={() => navigation.navigate('UserProfile', { userId: 'me' })}
+                        onPress={() => navigation.navigate('UserProfile')}
                     />
                 }
                 <TouchableOpacity

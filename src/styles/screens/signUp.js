@@ -40,8 +40,18 @@ export const signUpStyles = StyleSheet.create({
     },
 
     textInput: {    
+        width: '90%', 
         color: "gray",
         paddingLeft: 10
+    },
+
+    code: {
+        color: "gray",
+        paddingLeft: 10
+    },
+
+    eye: {
+        marginLeft: '-10%'
     },
 
     signIn: {

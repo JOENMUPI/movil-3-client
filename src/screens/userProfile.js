@@ -9,9 +9,9 @@ import {
     ToastAndroid,
     ActivityIndicator
 } from 'react-native';
-import AsyncStorage from '@react-native-community/async-storage';
 
 import { Icon, ListItem, Avatar } from 'react-native-elements';
+import AsyncStorage from '@react-native-community/async-storage';
 
 import Http from '../components/Http';
 
@@ -132,9 +132,10 @@ const UserProfile = ({ navigation, route }) => {
     }
 
     const getUser = async () => {   
-        setLoading(true);  
+        setLoading(true);
+        const id = route.params.userId;
         const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send('Get', 'user/me', null, token);
+        const data = await Http.send('Get', `user/${id}`, null, token);
     
         if(!data) {
             Alert.alert('Fatal Error', 'No data from server...');
@@ -143,9 +144,16 @@ const UserProfile = ({ navigation, route }) => {
             switch(data.typeResponse) {
                 case 'Success':
                     toast(data.message);
-                    const imgAux = await AsyncStorage.getItem('img');
+                    let userAux
                     
-                    return test({ ...data.body, img: imgAux });
+                    (route.params.userId != 'me')
+                    ? userAux = data.body
+                    : userAux = { 
+                        ...JSON.parse(await AsyncStorage.getItem('user'))
+
+                    }
+                    
+                    return test(userAux);
 
                 case 'Fail':
                     data.body.errors.forEach(element => {
@@ -158,13 +166,13 @@ const UserProfile = ({ navigation, route }) => {
                     Alert.alert(data.typeResponse, data.message);
                     return {}
             }
-        }
+        } 
     }
 
     const ListItemWithImgC = ({img, tittle, line2, line3 }) => (
         <View style={userDetailStyles.viewRow}>
             <ListItem.Content >
-                <TouchableOpacity style={[userDetailStyles.viewRow,  userDetailStyles.fill]}>
+                <TouchableOpacity style={[userDetailStyles.viewRow, userDetailStyles.fill]}>
                     <Avatar 
                         rounded
                         size="medium"
@@ -289,7 +297,7 @@ const UserProfile = ({ navigation, route }) => {
             awards: AWARDS_BASE,
             activities: ACTIVITIES_BASE,
             qualifications: QUALIFICATION_BASE,
-            description: 'hi, i am a description. inser with a function test...' 
+            description: 'hi, i am a description. inserted with a function test...' 
         }; 
     }
     
@@ -298,8 +306,8 @@ const UserProfile = ({ navigation, route }) => {
             {
                 (loading)
                 ? <ActivityIndicator size="large" color="#00ff00" />
-                : <ScrollView>
-                    <View style={[ userDetailStyles.viewLinesItem, userDetailStyles.fill ]}>
+                : <ScrollView style={userDetailStyles.fill}>
+                    <View style={userDetailStyles.viewLinesItem}>
                         {
                             (user.img == null)
                             ? <Avatar 
@@ -324,7 +332,6 @@ const UserProfile = ({ navigation, route }) => {
                             {user.country} - 10 connect
                         </Text>
                     </View>
-                    <View style={userDetailStyles.viewDivider}/>
                     {
                         (user.description == null)
                         ? null
@@ -337,7 +344,6 @@ const UserProfile = ({ navigation, route }) => {
                             </Text>
                         </View>
                     }
-                    <View style={userDetailStyles.viewDivider}/>
                     { 
                         (user.activities.length < 1) 
                         ? null
@@ -365,7 +371,6 @@ const UserProfile = ({ navigation, route }) => {
                             />
                         </View>
                     }
-                    <View style={userDetailStyles.viewDivider}/> 
                     { 
                         (user.qualifications.length < 1)
                         ? null
@@ -393,7 +398,6 @@ const UserProfile = ({ navigation, route }) => {
                             />
                         </View> 
                     } 
-                    <View style={userDetailStyles.viewDivider}/>
                     { 
                         (user.experiences.length < 1)
                         ? null
@@ -420,9 +424,8 @@ const UserProfile = ({ navigation, route }) => {
                                 action={gotoUserExperiences}
                             />
                         </View> 
-                        }
-                    <View style={userDetailStyles.viewDivider}/>
-                    {   
+                    }
+                    { 
                         (user.idioms.length < 1)
                         ? null
                         : <View style={userDetailStyles.viewList}>
@@ -444,7 +447,6 @@ const UserProfile = ({ navigation, route }) => {
                             />
                         </View>
                     }
-                    <View style={userDetailStyles.viewDivider}/>
                     {
                         (user.awards == null)
                         ? null
@@ -467,7 +469,6 @@ const UserProfile = ({ navigation, route }) => {
                             />
                         </View>
                     }
-                    <View style={userDetailStyles.viewDivider}/>
                     {
                         (user.skills == null)
                         ? null
@@ -497,7 +498,7 @@ const UserProfile = ({ navigation, route }) => {
 
 export default UserProfile
 
-export const userDetailStyles = StyleSheet.create({
+const userDetailStyles = StyleSheet.create({
     container: {
         flex: 1,
         marginTop: 24,
@@ -507,12 +508,8 @@ export const userDetailStyles = StyleSheet.create({
         backgroundColor: '#f4f6fc',
     },
 
-    viewDivider: { 
-        backgroundColor: '#f4f6fc', 
-        height:10 
-    },
-
     viewList: {
+        marginTop: 10,
         backgroundColor: 'white', 
         borderRadius: 10 
     },

@@ -1,12 +1,11 @@
 import * as React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Icon } from 'react-native-elements';
-
 import Home from './home';
-import UserProfile from './userProfile';
+import Post from './post';
+
 
 const Tab = createBottomTabNavigator();
-
 const OPTION = {
     activeTintColor: 'tomato',
     inactiveTintColor: 'gray',
@@ -18,18 +17,15 @@ const SCREEN_OPTIONS = ({ route }) => ({
 
         switch(route.name) {
             case 'Home':
-                if (route.name === 'Home') {
-                    (focused)
-                    ? iconName = 'home'
-                    : iconName = 'home-outline';
-                }
+                (focused)
+                ? iconName = 'home'
+                : iconName = 'home-outline';
                 break;
-            case 'UserProfile':
-                if (route.name === 'UserProfile') {
-                    (focused)
-                    ? iconName = 'person-circle'
-                    : iconName = 'person-circle-outline';
-                }
+
+            case 'Post':
+                (focused)
+                ? iconName = 'duplicate'
+                : iconName = 'duplicate-outline';
                 break;
         }
         
@@ -52,7 +48,7 @@ export default function App() {
             tabBarOptions={OPTION}
             >
             <Tab.Screen name="Home" component={Home}/>
-            <Tab.Screen name="UserProfile" component={UserProfile}/>
+            <Tab.Screen name="Post" component={Post}/>
         </Tab.Navigator>
     );
 }

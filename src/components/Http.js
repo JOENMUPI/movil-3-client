@@ -1,4 +1,4 @@
-const url = 'https://server-movil-3.herokuapp.com/'
+const url = 'http://192.168.1.105:8000/'
 
 const send = async (method, endpoint, body, token) => {
     let response;

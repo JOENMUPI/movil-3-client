@@ -379,6 +379,7 @@ const SignUp = ({ navigation }) => {
                             />
                         </View>
                         <CheckBox
+                            containerStyle={signUpStyles.eye}
                             checkedIcon={<Icon name='eye-outline' color='gold' type='ionicon' size={20}/>}
                             uncheckedIcon={<Icon name='eye-off-outline' color='grey' type='ionicon' size={20}/>}
                             checked={vissiblePassFlag}
@@ -404,7 +405,7 @@ const SignUp = ({ navigation }) => {
                     <Icon name='phone-portrait-outline' color='gray' type='ionicon' size={20} />
                         {   
                             (user.country != null)
-                            ? <Text style={signUpStyles.textInput}>{user.country.code}</Text>
+                            ? <Text style={signUpStyles.code}>{user.country.code}</Text>
                             : null
                         }
                     <TextInput
