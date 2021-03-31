@@ -11,10 +11,10 @@ import {
 
 import { Icon, Avatar, CheckBox } from 'react-native-elements'
 import AsyncStorage from '@react-native-community/async-storage';
-import * as ImagePicker from 'expo-image-picker';
 
 import Field from '../components/Field';
 import Http from '../components/Http';
+import ImagePicker from '../components/ImagePicker';
 import SearchBar from '../components/SearchBar';
 
 import { signUpStyles } from '../styles/screens/signUp';
@@ -59,30 +59,14 @@ const SignUp = ({ navigation }) => {
         setPhoneNumber({ ...phoneNumber, flag: true });
     }
 
-    const openImagePickerAsync = async () => {  
-        let permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-        
-        if(permission.status != 'granted') {
-            Alert.alert(
-            'Error', 
-            'Sorry, we need camera roll permissions to make this work!',
-            { cancelable: false }
-        );
-        return;
+    const pressAvatar = async() => {
+        const img = await ImagePicker.getImage();
 
-        }  else {
-            const imgResult = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.All,
-                allowsEditing: true,
-                aspect: [1, 1],
-                quality: 1,
-                base64: true,
-            }); 
-            
-            if(!imgResult.cancelled) { 
-                setUser({ ...user, img: imgResult.base64 });
-            } 
+        if(img == null) {
+            return;
         }
+        
+        setUser({ ...user, img });
     }
 
     const checkPass = () => {
@@ -306,13 +290,13 @@ const SignUp = ({ navigation }) => {
                         {
                             (user.img != null) 
                             ? <Avatar 
-                                onPress={openImagePickerAsync} 
+                                onPress={pressAvatar} 
                                 rounded 
                                 source={{ uri: `data:image/png;base64,${user.img}` }}
                                 size="xlarge" 
                             />
                             : <Avatar 
-                                onPress={openImagePickerAsync} 
+                                onPress={pressAvatar} 
                                 rounded 
                                 size="xlarge"
                                 containerStyle={{ backgroundColor: 'lightgray' }}

@@ -4,90 +4,265 @@ import {
     Text, 
     StyleSheet,
     TouchableOpacity,
+    TextInput,
+    ScrollView,
     Switch,
+    ToastAndroid,
+    ActivityIndicator
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
-import { Icon, Avatar } from 'react-native-elements';
+import { Icon, Avatar, Image } from 'react-native-elements';
+import ImagePicker from '../components/ImagePicker';
+import Http from '../components/Http';
 
-
-const TRACK_COLOR = { 
-    false: "#767577", 
-    true: "#81b0ff" 
-}
 
 const CAMERA_ICON = { 
     name: 'camera-outline', 
     color: 'white', 
     type: 'ionicon', 
-    size: 100 
+    size: 30
 }
 
+const POST_BLANK = {
+    description: '',
+    tittle: '',
+    img: null,
+    commentFalg: true,
+    connectFlag: false, 
+}
+
+const USER_BLANK = {
+    img: null,
+    name: '',
+    lastName: ''
+}
 
 const Home = ({ navigation, route }) => { 
-    const [img, setImg] = useState(null);
-    const [enterprise, setEnterprise] = useState(false);
-    const [searchBar, setSearchBar] = useState(false);
+    const [user, setUser] = useState(USER_BLANK);
+    const [post, setPost] = useState(POST_BLANK);
+    const [descriptionFlag, setDescriptionFlag] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    let refTextIput = '';
+
+    const toast = (message) => { 
+        ToastAndroid.showWithGravity(
+            message,
+            ToastAndroid.SHORT,
+            ToastAndroid.TOP
+        );
+    }
     
-    getImg = async () => {
-        return await AsyncStorage.getItem('img');
+    const getUser = async () => {
+        return JSON.parse(await AsyncStorage.getItem('user'));
     }
 
-    useEffect(() => {
-        getImg().then(res => { 
-            setImg(res);
-        }); 
+    const finishOp = () => {
+        setPost(POST_BLANK);
+        navigation.goBack();
+    }
+
+    const handlepressIconImage = async () => {
+        const img = await ImagePicker.getImage(); 
+        
+        if(img == null) {
+            return;
+        }
+
+        setPost({ ...post, img });
+    }
+
+    const deleteImg = () => {
+        toast('Image removed...');
+        setPost({ ...post, img: null });
+    }
+
+    const sendPost = async () => {   
+        setLoading(true);
+        const token = await AsyncStorage.getItem('token'); 
+        const data = await Http.send('POST', `post`, post, token);
+    
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+            
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success':
+                    toast(data.message);
+                    finishOp();
+                    break;
+
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+                    
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        } 
+
+        setLoading(false);
+    }
+
+    useEffect(() => { 
+        getUser().then(res => setUser(res)); 
     }, []);
 
     return (
-        <View style={homeStyles.container}>
-            <View style={[ homeStyles.viewRow, homeStyles.header ]}>
-                {
-                    (img == null)
-                    ? <Avatar 
-                        rounded
-                        size="small"
-                        containerStyle={homeStyles.avatarContainer}
-                        icon={CAMERA_ICON} 
-                        onPress={() => navigation.navigate('UserProfile')}
-                    />
-                    : <Avatar 
-                        rounded 
-                        size="small" 
-                        source={{ uri: `data:image/png;base64,${img}` }}
-                        onPress={() => navigation.navigate('UserProfile')}
-                    />
-                }
+        <View style={postStyles.container}>
+            <View style={[ postStyles.viewRow, postStyles.header ]}>
+                <Icon
+                    onPress={finishOp} 
+                    name='close-outline' 
+                    color='gray' 
+                    type='ionicon' 
+                    size={30}
+                />
+                <Icon
+                    onPress={handlepressIconImage}
+                    name='image-outline' 
+                    color='gray' 
+                    type='ionicon' 
+                    size={30}
+                />
+                <Text style={postStyles.textHeader}>
+                    New post 
+                </Text>
                 <TouchableOpacity
-                    style={[ homeStyles.ViewSearchBar, homeStyles.viewRow ]}
-                    onPress={() => setSearchBar(true)}
+                    style={
+                        ((post.tittle.length && post.description.length) > 1 || (post.tittle.length && post.img != null))
+                        ? postStyles.saveButton
+                        : [postStyles.saveButton, { borderColor: 'gray' }]
+                    }
+                    disabled={
+                        !((post.tittle.length && post.description.length) > 1 || (post.tittle.length && post.img != null)) 
+                        ? true 
+                        : false
+                    }
+                    onPress={sendPost}
                     >
-                    <Text style={homeStyles.text}>
-                        Search
+                    <Text 
+                        style={
+                            ((post.tittle.length && post.description.length) > 1 || (post.tittle.length && post.img != null))
+                            ? postStyles.SaveButtonText
+                            : [postStyles.SaveButtonText, { color: 'gray' }]
+                        }
+                        >
+                        Send
                     </Text>
-                    <Icon name='search-outline' color='gray' type='ionicon' size={20}/>
                 </TouchableOpacity>
-                <View style={homeStyles.viewRow}>
-                    <Text style={homeStyles.text}>
-                        Mode enterprise: 
-                    </Text>
-                    <Switch
-                        thumbColor={enterprise ? "darkcyan" : "#f4f3f4"}
-                        trackColor={TRACK_COLOR}
-                        onValueChange={() => setEnterprise(!enterprise)}
-                        value={enterprise}
-                    />
-                </View>
             </View>
-            <View style={homeStyles.body}>
-                <Text>Home (working..)</Text>  
-            </View>      
+            <View style={postStyles.body}>
+                {
+                (loading)
+                ? <View style={postStyles.loadingView}>
+                    <ActivityIndicator size="large" color="#00ff00" />
+                </View>
+                : <ScrollView>
+                        <View style={postStyles.viewRow}>
+                            {
+                                (user.img == null)
+                                ? <Avatar 
+                                    rounded
+                                    size="medium"
+                                    containerStyle={postStyles.avatarContainer}
+                                    icon={CAMERA_ICON} 
+                                    onPress={() => navigation.navigate('UserProfile')}
+                                />
+                                : <Avatar 
+                                    rounded 
+                                    size="medium" 
+                                    source={{ uri: `data:image/png;base64,${user.img}` }}
+                                    onPress={() => navigation.navigate('UserProfile')}
+                                />
+                            }
+                            <View>
+                                <Text style={postStyles.nameText}>
+                                    {`${user.name} ${user.lastName}`} 
+                                </Text>
+                                <View style={postStyles.viewRow}>
+                                    <TouchableOpacity 
+                                        style={postStyles.button}
+                                        onPress={() => setPost({ ...post, connectFlag: !post.connectFlag })}
+                                        >
+                                        <View style={postStyles.viewRow}>
+                                            <Text style={postStyles.SaveButtonText}>
+                                                Only connect:
+                                            </Text>
+                                            <Switch
+                                                onValueChange={() => setPost({ ...post, connectFlag: !post.connectFlag })}
+                                                value={post.connectFlag}
+                                            />
+                                        </View>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity 
+                                        style={postStyles.button}
+                                        onPress={() => setPost({ ...post, commentFalg: !post.commentFalg })}
+                                        >
+                                        <View style={postStyles.viewRow}>
+                                            <Text style={postStyles.SaveButtonText}>
+                                                Commentary:
+                                            </Text>
+                                            <Switch
+                                                onValueChange={() => setPost({ ...post, commentFalg: !post.commentFalg })}
+                                                value={post.commentFalg}
+                                            />
+                                        </View>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        </View> 
+                        <TextInput
+                            placeholder='Tittle post'  
+                            style={postStyles.inputText}
+                            onChangeText={text => setPost({ ...post, tittle: text })}
+                            onEndEditing={() => refTextIput.focus()} 
+                            value={post.tittle}
+                        />
+                        <TextInput
+                            ref={input => refTextIput = input}
+                            placeholder='More text'  
+                            style={postStyles.inputText}
+                            multiline
+                            onFocus={() => setDescriptionFlag(true)}
+                            onChangeText={text => setPost({ ...post, description: text })}
+                            onEndEditing={() => setDescriptionFlag(false)} 
+                            value={post.description}
+                        /> 
+                        {
+                            (!descriptionFlag) 
+                            ? null 
+                            : <TouchableOpacity
+                                style={postStyles.TextAreabutton}
+                                onPress={() =>  setDescriptionFlag(false)}
+                                >
+                                <Text style={postStyles.textButton}>
+                                    Finish editing
+                                </Text>
+                            </TouchableOpacity>    
+                        }  
+                        {
+                            (post.img == null)
+                            ? null 
+                            : <Image
+                                onLongPress={deleteImg}
+                                source={{ uri: `data:image/png;base64,${post.img}` }}
+                                style={{ borderRadius: 10, width: '100%', height: 300, resizeMode: 'contain', marginTop: 10 }}
+                            />
+                        }         
+                    </ScrollView>
+                }
+            </View> 
         </View>
     )
 }
 
 export default Home
 
-const homeStyles = StyleSheet.create({
+const postStyles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: 'white',
@@ -102,20 +277,38 @@ const homeStyles = StyleSheet.create({
     },
 
     body: {
-        paddingTop: 10,
-        justifyContent: "center",
-        alignItems: "center",
+        paddingBottom: '22%', 
+        paddingHorizontal: '3%',
         height: '100%',
         backgroundColor: '#f4f6fc'
     },
 
-    ViewSearchBar: {
-        backgroundColor: 'lightgray', 
-        height: '100%', 
-        width: '40%', 
-        borderRadius: 5, 
-        paddingHorizontal: '2%',
-        justifyContent: 'space-between'
+    loadingView: {
+        alignItems: 'center', 
+        justifyContent:'center', 
+        height: '100%'
+    },
+
+    saveButton: {
+        padding: '2%',
+        paddingVertical: '3%',
+        borderRadius: 10,
+        borderWidth: 1,
+        paddingHorizontal: '5%',
+        borderColor: '#3465d9',  
+    },
+
+    button: {
+        marginLeft: '2%', 
+        padding: '2%',
+        borderRadius: 50,
+        borderWidth: 1,
+        borderColor: '#3465d9',  
+    },
+
+    SaveButtonText: {
+        fontWeight: "bold",
+        color: '#3465d9',
     },
 
     avatarContainer: {
@@ -127,7 +320,34 @@ const homeStyles = StyleSheet.create({
         flexDirection: 'row'
     },
 
-    text: {
+    textHeader: {
+        fontSize: 30
+    },
+
+    textButton: {
+        color: 'white' 
+    },
+
+    TextAreabutton: {
+        backgroundColor: '#1e90ff', 
+        alignItems: 'center', 
+        borderRadius: 5, 
+        padding: 15, 
+        marginTop: 10
+    },
+
+    inputText: {
+        marginTop: 10, 
+        paddingVertical: 10, 
+        paddingHorizontal: 5, 
+        backgroundColor:'white', 
+        borderRadius: 10, 
         color: 'gray'
-    }
+    },
+
+    nameText: {
+        paddingLeft: '2%',
+        fontSize: 20,
+        fontWeight: 'bold'
+    },
 });

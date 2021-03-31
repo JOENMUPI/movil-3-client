@@ -135,7 +135,7 @@ const UserProfile = ({ navigation, route }) => {
         setLoading(true);
         const id = route.params.userId;
         const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send('Get', `user/${id}`, null, token);
+        const data = await Http.send('GET', `user/${id}`, null, token);
     
         if(!data) {
             Alert.alert('Fatal Error', 'No data from server...');
