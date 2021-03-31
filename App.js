@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 
 import userDetails from './src/Screen/userDetails';
+import EditProfile from './src/Screen/EditProfile';
 
 const Stack = createStackNavigator();
 
@@ -11,6 +12,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
+         <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: "EditProfile", headerShown: false }}></Stack.Screen>
         <Stack.Screen name="userDetails" component={userDetails} options={{ title: "userDetails", headerShown: false }}></Stack.Screen>
 
       </Stack.Navigator>
