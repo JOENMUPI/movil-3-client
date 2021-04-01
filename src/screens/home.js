@@ -4,6 +4,7 @@ import {
     Text, 
     StyleSheet,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     Switch,
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
@@ -66,6 +67,7 @@ const Home = ({ navigation, route }) => {
                     </Text>
                     <Icon name='search-outline' color='gray' type='ionicon' size={20}/>
                 </TouchableOpacity>
+                <TouchableWithoutFeedback onPress={() => setEnterprise(!enterprise)} >
                 <View style={homeStyles.viewRow}>
                     <Text style={homeStyles.text}>
                         Mode enterprise: 
@@ -77,6 +79,7 @@ const Home = ({ navigation, route }) => {
                         value={enterprise}
                     />
                 </View>
+                </TouchableWithoutFeedback>
             </View>
             <View style={homeStyles.body}>
                 <Text>Home (working..)</Text>  

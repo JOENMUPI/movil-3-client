@@ -8,7 +8,8 @@ import {
     ScrollView,
     Switch,
     ToastAndroid,
-    ActivityIndicator
+    ActivityIndicator,
+    TouchableWithoutFeedback,
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import { Icon, Avatar, Image } from 'react-native-elements';
@@ -27,7 +28,7 @@ const POST_BLANK = {
     description: '',
     tittle: '',
     img: null,
-    commentFalg: true,
+    commentFlag: true,
     connectFlag: false, 
 }
 
@@ -57,6 +58,14 @@ const Home = ({ navigation, route }) => {
         return JSON.parse(await AsyncStorage.getItem('user'));
     }
 
+    const getpost = () => {
+        if(route.params) {
+            return route.params.post;
+        } else {
+            return POST_BLANK;
+        }
+    }
+
     const finishOp = () => {
         setPost(POST_BLANK);
         navigation.goBack();
@@ -77,11 +86,17 @@ const Home = ({ navigation, route }) => {
         setPost({ ...post, img: null });
     }
 
-    const sendPost = async () => {   
+    const handleSendbutton = () => {
+        (route.params) 
+        ? sendPost('PUT')
+        : sendPost('POST'); 
+    }
+
+    const sendPost = async (mode) => {   
         setLoading(true);
         const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send('POST', `post`, post, token);
-    
+        const data = await Http.send(mode, `post`, post, token); 
+        
         if(!data) {
             Alert.alert('Fatal Error', 'No data from server...');
             
@@ -89,6 +104,10 @@ const Home = ({ navigation, route }) => {
             switch(data.typeResponse) {
                 case 'Success':
                     toast(data.message);
+                    if(route.params) {
+                        route.params.callback(post);
+                    }
+
                     finishOp();
                     break;
 
@@ -109,6 +128,7 @@ const Home = ({ navigation, route }) => {
 
     useEffect(() => { 
         getUser().then(res => setUser(res)); 
+        setPost(getpost());
     }, []);
 
     return (
@@ -129,39 +149,84 @@ const Home = ({ navigation, route }) => {
                     size={30}
                 />
                 <Text style={postStyles.textHeader}>
-                    New post 
+                    {
+                        (route.params)
+                        ? 'Edit Post'
+                        : 'New post'
+                    } 
                 </Text>
                 <TouchableOpacity
                     style={
-                        ((post.tittle.length && post.description.length) > 1 || (post.tittle.length && post.img != null))
+                        (route.params) 
+                        ? (
+                            (post.tittle.length && (post.description.length || post.img != null))
+                            && (
+                                post.tittle != route.params.post.tittle 
+                                || post.img != route.params.post.img
+                                || post.description != route.params.post.description
+                                || post.connectFlag != route.params.post.connectFlag
+                                || post.commentFlag != route.params.post.commentFlag
+                            )
+                        ) 
+                        ? postStyles.saveButton
+                        : [postStyles.saveButton, { borderColor: 'gray' }]
+                        : ((post.tittle.length && (post.description.length || post.img != null)))
                         ? postStyles.saveButton
                         : [postStyles.saveButton, { borderColor: 'gray' }]
                     }
                     disabled={
-                        !((post.tittle.length && post.description.length) > 1 || (post.tittle.length && post.img != null)) 
+                        (route.params)
+                        ? (post.tittle.length && (post.description.length || post.img != null))
+                        && (
+                            post.tittle != route.params.post.tittle 
+                            || post.img != route.params.post.img
+                            || post.description != route.params.post.description
+                            || post.connectFlag != route.params.post.connectFlag
+                            || post.commentFlag != route.params.post.commentFlag
+                        )
+                        ? false
+                        : true
+                        : (!((post.tittle.length && (post.description.length || post.img != null)))) 
                         ? true 
                         : false
                     }
-                    onPress={sendPost}
+                    onPress={handleSendbutton}
                     >
                     <Text 
                         style={
-                            ((post.tittle.length && post.description.length) > 1 || (post.tittle.length && post.img != null))
+                            (route.params) 
+                            ? (
+                                (post.tittle.length && (post.description.length || post.img != null))
+                                && (
+                                    post.tittle != route.params.post.tittle 
+                                    || post.img != route.params.post.img
+                                    || post.description != route.params.post.description
+                                    || post.connectFlag != route.params.post.connectFlag
+                                    || post.commentFlag != route.params.post.commentFlag
+                                )
+                            ) 
+                            ? postStyles.SaveButtonText 
+                            : [postStyles.SaveButtonText, { color: 'gray' }]
+                            : ((post.tittle.length && (post.description.length || post.img != null)))
                             ? postStyles.SaveButtonText
                             : [postStyles.SaveButtonText, { color: 'gray' }]
                         }
                         >
-                        Send
+                        {
+                            (route.params)
+                            ? 'Edit'
+                            : 'Send' 
+                        }
                     </Text>
                 </TouchableOpacity>
             </View>
             <View style={postStyles.body}>
                 {
-                (loading)
-                ? <View style={postStyles.loadingView}>
-                    <ActivityIndicator size="large" color="#00ff00" />
-                </View>
-                : <ScrollView>
+                    (loading)
+                    ? <View style={postStyles.loadingView}>
+                        <ActivityIndicator size="large" color="#00ff00" />
+                    </View>
+                    : <ScrollView>
                         <View style={postStyles.viewRow}>
                             {
                                 (user.img == null)
@@ -184,34 +249,36 @@ const Home = ({ navigation, route }) => {
                                     {`${user.name} ${user.lastName}`} 
                                 </Text>
                                 <View style={postStyles.viewRow}>
-                                    <TouchableOpacity 
-                                        style={postStyles.button}
-                                        onPress={() => setPost({ ...post, connectFlag: !post.connectFlag })}
-                                        >
-                                        <View style={postStyles.viewRow}>
-                                            <Text style={postStyles.SaveButtonText}>
-                                                Only connect:
-                                            </Text>
-                                            <Switch
-                                                onValueChange={() => setPost({ ...post, connectFlag: !post.connectFlag })}
-                                                value={post.connectFlag}
-                                            />
-                                        </View>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity 
-                                        style={postStyles.button}
-                                        onPress={() => setPost({ ...post, commentFalg: !post.commentFalg })}
-                                        >
-                                        <View style={postStyles.viewRow}>
-                                            <Text style={postStyles.SaveButtonText}>
-                                                Commentary:
-                                            </Text>
-                                            <Switch
-                                                onValueChange={() => setPost({ ...post, commentFalg: !post.commentFalg })}
-                                                value={post.commentFalg}
-                                            />
-                                        </View>
-                                    </TouchableOpacity>
+                                    <View style={postStyles.button}>
+                                        <TouchableWithoutFeedback 
+                                            onPress={() => setPost({ ...post, connectFlag: !post.connectFlag }) }
+                                            >
+                                            <View style={postStyles.viewRow}>
+                                                <Text style={postStyles.SaveButtonText}>
+                                                    Only connect:
+                                                </Text>
+                                                <Switch
+                                                    onValueChange={() => setPost({ ...post, connectFlag: !post.connectFlag })}
+                                                    value={post.connectFlag}
+                                                />
+                                            </View>
+                                        </TouchableWithoutFeedback>
+                                    </View>
+                                    <View style={postStyles.button}>
+                                        <TouchableWithoutFeedback 
+                                            onPress={() => setPost({ ...post, commentFlag: !post.commentFlag })}
+                                            >
+                                            <View style={postStyles.viewRow}>
+                                                <Text style={postStyles.SaveButtonText}>
+                                                    Commentary:
+                                                </Text>
+                                                <Switch
+                                                    onValueChange={() => setPost({ ...post, commentFlag: !post.commentFlag })}
+                                                    value={post.commentFlag}
+                                                />
+                                            </View>
+                                        </TouchableWithoutFeedback>
+                                    </View>
                                 </View>
                             </View>
                         </View> 
@@ -222,6 +289,7 @@ const Home = ({ navigation, route }) => {
                             onEndEditing={() => refTextIput.focus()} 
                             value={post.tittle}
                         />
+                        
                         <TextInput
                             ref={input => refTextIput = input}
                             placeholder='More text'  
@@ -235,15 +303,12 @@ const Home = ({ navigation, route }) => {
                         {
                             (!descriptionFlag) 
                             ? null 
-                            : <TouchableOpacity
-                                style={postStyles.TextAreabutton}
-                                onPress={() =>  setDescriptionFlag(false)}
-                                >
+                            : <TouchableOpacity style={postStyles.TextAreabutton}>
                                 <Text style={postStyles.textButton}>
                                     Finish editing
                                 </Text>
                             </TouchableOpacity>    
-                        }  
+                        } 
                         {
                             (post.img == null)
                             ? null 
@@ -277,16 +342,15 @@ const postStyles = StyleSheet.create({
     },
 
     body: {
-        paddingBottom: '22%', 
+        flex:1,
         paddingHorizontal: '3%',
-        height: '100%',
         backgroundColor: '#f4f6fc'
     },
 
     loadingView: {
         alignItems: 'center', 
         justifyContent:'center', 
-        height: '100%'
+        flex: 1
     },
 
     saveButton: {

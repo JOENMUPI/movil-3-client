@@ -1,57 +1,73 @@
-import * as React from 'react';
-import { Text, View, Button } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import React, { useState, useEffect } from 'react'; 
+import { View, StyleSheet, Text, Button } from 'react-native';
+import { BottomSheet, ListItem } from 'react-native-elements';
 
-function TestScreen() {
-    return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text>Test!</Text>
-        </View>
-    );
+const KeyboardAvoidingComponent = () => {
+  const [isVisible, setIsVisible] = useState(false);
+  
+  const list = [
+    { title: 'Edit post' },
+    { title: 'Delete post' },
+    { title: 'Add reaction' },
+    {
+      title: 'Cancel',
+      containerStyle: { backgroundColor: 'red' },
+      titleStyle: { color: 'white' },
+      onPress: () => setIsVisible(false),
+    },
+  ];
+  
+  return (
+    <View style={{ marginTop: 24 }}>
+      <Button 
+        
+        title='test'
+        onPress={() => setIsVisible(!isVisible)} 
+      >
+        
+      </Button>
+      <BottomSheet
+        isVisible={isVisible}
+        containerStyle={{ backgroundColor: 'rgba(0.5, 0.25, 0, 0.2)' }}
+        >
+        {
+          list.map((l, i) => (
+            <ListItem key={i} containerStyle={l.containerStyle} onPress={l.onPress}>
+              <ListItem.Content>
+                <ListItem.Title style={l.titleStyle}>{l.title}</ListItem.Title>
+              </ListItem.Content>
+            </ListItem>
+          ))
+        }
+      </BottomSheet>
+    </View>
+    
+  )
 }
 
-function HomeScreen(props) {
-    const gotoTestStackScreen = () => {
-        props.navigation.navigate('Test');
-    };
-    return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text>Home!</Text>
-            <Button title="Go to test stack screen" onPress={gotoTestStackScreen} />
-        </View>
-    );
-}
+const styles = StyleSheet.create({
+  container: {
+    flex: 1
+  },
+  inner: {
+    padding: 24,
+    flex: 1,
+    justifyContent: "space-around"
+  },
+  header: {
+    fontSize: 36,
+    marginBottom: 48
+  },
+  textInput: {
+    height: 40,
+    borderColor: "#000000",
+    borderBottomWidth: 1,
+    marginBottom: 36
+  },
+  btnContainer: {
+    backgroundColor: "white",
+    marginTop: 12
+  }
+});
 
-function SettingsScreen() {
-    return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-            <Text>Settings!</Text>
-        </View>
-    );
-}
-
-const Tab = createBottomTabNavigator();
-
-function MyTabs() {
-    return (
-        <Tab.Navigator>
-            <Tab.Screen name="Home" component={HomeScreen} />
-           
-        </Tab.Navigator>
-    );
-}
-
-const Stack = createStackNavigator();
-
-export default function App() {
-    return (
-        <NavigationContainer independent={true}>
-            <Stack.Navigator initialRouteName="Tabs">
-                <Stack.Screen name="Test" component={TestScreen} />
-                <Stack.Screen name="Tabs" component={MyTabs} />
-            </Stack.Navigator>
-        </NavigationContainer>
-    );
-}
+export default KeyboardAvoidingComponent;

@@ -10,34 +10,10 @@ import {
     ActivityIndicator
 } from 'react-native';
 
-import { Icon, ListItem, Avatar } from 'react-native-elements';
+import { Icon, ListItem, Avatar, Image } from 'react-native-elements';
 import AsyncStorage from '@react-native-community/async-storage';
 
 import Http from '../components/Http';
-
-const ACTIVITIES_BASE = [
-    {
-        id: 4,
-        tittle: 'Tittle',
-        description: 'description',
-        img: 'images',
-        reactions: [ { type: 'happy-outline', num: 10 }, { type: 'at-outline', num: 5 } ]
-    }, 
-    {
-        id: 5,
-        tittle: 'Tittle2',
-        description: 'description2',
-        img: 'images2',
-        reactions: [ { type: 'at-outline', num: 10 }, { type: 'eye-outline', num: 5 } ]
-    },
-    {
-        id: 6,
-        tittle: 'Tittle3',
-        description: 'description3',
-        img: 'images3',
-        reactions: [ { type: 'finger-print-outline', num: 10 }, { type: 'at-outline', num: 5 } ]
-    }
-]
 
 const EXPERIENCE_BASE = [
     {
@@ -131,6 +107,32 @@ const UserProfile = ({ navigation, route }) => {
         );
     }
 
+    const postCallback = (type, postid) => {
+        let postAux = [];
+        
+        switch(type) {
+            case 'update':
+                postAux = user.activities.map(item => {
+                    if(postid == item.id) {
+                        return item;
+                    
+                    } else {
+                        return taskItem;
+                    }
+                });
+                break;
+            case 'delete':
+                postAux = user.activities.filter(i => i.id != postid);
+                break;
+            
+            default:
+                Alert.alert('Error on type of callback');
+                break;
+        }
+
+        setUser({ ...user, activities: postAux });
+    }
+
     const getUser = async () => {   
         setLoading(true);
         const id = route.params.userId;
@@ -144,15 +146,13 @@ const UserProfile = ({ navigation, route }) => {
             switch(data.typeResponse) {
                 case 'Success':
                     toast(data.message);
-                    let userAux
-                    
-                    (route.params.userId != 'me')
-                    ? userAux = data.body
-                    : userAux = { 
-                        ...JSON.parse(await AsyncStorage.getItem('user'))
+                    let userAux = data.body;  
 
+                    if (route.params.userId == 'me') {
+                        const img = JSON.parse(await AsyncStorage.getItem('user')).img;
+                        userAux = { ...userAux, img }
                     }
-                    
+                                          
                     return test(userAux);
 
                 case 'Fail':
@@ -169,16 +169,26 @@ const UserProfile = ({ navigation, route }) => {
         } 
     }
 
-    const ListItemWithImgC = ({img, tittle, line2, line3 }) => (
-        <View style={userDetailStyles.viewRow}>
+    const ListItemWithImgC = ({ img, tittle, line2, line3, onPress }) => ( 
+        <View style={userDetailStyles.viewRow}> 
             <ListItem.Content >
-                <TouchableOpacity style={[userDetailStyles.viewRow, userDetailStyles.fill]}>
-                    <Avatar 
-                        rounded
-                        size="medium"
-                        containerStyle={{ backgroundColor: 'lightgray' }}
-                        icon={{ name: 'camera-outline', color: 'white', type: 'ionicon', size: 40 /* img */ }} 
-                    />
+                <TouchableOpacity
+                    onPress={onPress} 
+                    style={[userDetailStyles.viewRow, userDetailStyles.fill]}
+                    >
+                    {
+                        (img == null)
+                        ? <Avatar 
+                            rounded
+                            size="medium"
+                            containerStyle={{ backgroundColor: 'lightgray' }}
+                            icon={{ name: 'camera-outline', color: 'white', type: 'ionicon', size: 40 }} 
+                        />
+                        : <Image
+                            source={{ uri: `data:image/png;base64,${img}` }}
+                            containerStyle={{ borderRadius: 5, width: 55, height: 55, resizeMode: 'contain', marginTop: 10 }}
+                        />
+                    }
                     <View>
                         <View style={userDetailStyles.viewLinesItem}>
                             <Text style={userDetailStyles.tittleItem}>
@@ -295,7 +305,6 @@ const UserProfile = ({ navigation, route }) => {
             idioms: IDIOMS_BASE,
             skills: SKILLS_BASE,
             awards: AWARDS_BASE,
-            activities: ACTIVITIES_BASE,
             qualifications: QUALIFICATION_BASE,
             description: 'hi, i am a description. inserted with a function test...' 
         }; 
@@ -358,6 +367,7 @@ const UserProfile = ({ navigation, route }) => {
                                         bottomDivider
                                         >
                                         <ListItemWithImgC 
+                                            onPress={() => navigation.navigate('SeePost', { user, post: item, callback: postCallback.bind(this) })}
                                             img={item.img}
                                             tittle={item.tittle}
                                             line2={line2ActivityQualification(item.description)}
