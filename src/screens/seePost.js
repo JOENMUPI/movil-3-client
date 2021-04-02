@@ -7,6 +7,7 @@ import {
     TextInput,
     ScrollView,
     ToastAndroid,
+    ActivityIndicator,
     Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
@@ -21,11 +22,19 @@ const CAMERA_ICON = {
     size: 30
 }
 
+const NEW_COMMENT_BLANK = {
+    text: '', 
+    flag: false
+}
+
 const SeePost = ({ navigation, route }) => { 
     const [meId, setMeId] = useState(0);
     const [user, setUser] = useState(route.params.user);
     const [post, setPost] = useState(route.params.post);
+    const [commentaries, setCommentaries] = useState([]);
+    const [newComment, setNewComment] = useState(NEW_COMMENT_BLANK);
     const [bottomSheetFlag, setBottomSheetFlag] = useState(false);
+
 
     const bottomSheetItems = [
         { 
@@ -123,8 +132,70 @@ const SeePost = ({ navigation, route }) => {
         }
     }
 
+    const getComments = async () => {
+        const token = await AsyncStorage.getItem('token'); 
+        const data = await Http.send('GET', `comment/post/${post.id}`, null, token); 
+        
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+            return [];
+
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success': 
+                    toast(data.message); 
+                    return data.body; 
+                    
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    return [];
+
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    return [];
+            }    
+        }
+    }
+
+    const sendNewComment = async () => {
+        setNewComment({ ...newComment, flag: true });
+        const token = await AsyncStorage.getItem('token'); 
+        const jsonAux =  { text: newComment.text, parentId: null, postId: post.id }; 
+        const data = await Http.send('POST', 'comment', jsonAux, token); 
+        
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success': 
+                    toast(data.message); 
+                    let commentariesAux = commentaries;
+                    
+                    commentariesAux.unshift(data.body);
+                    setCommentaries(commentariesAux);
+                    break;
+            
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        }
+
+        setNewComment(NEW_COMMENT_BLANK);
+    }
+
     useEffect(() => { 
         getMyId().then(res => setMeId(res));
+        getComments().then(res => setCommentaries(res));
     }, []);
 
     return (
@@ -159,7 +230,7 @@ const SeePost = ({ navigation, route }) => {
                             ? <Avatar 
                                 rounded
                                 size="medium"
-                                containerStyle={seePostStyles.avatarContainer}
+                                containerStyle={{ backgroundColor: 'lightgray' }}
                                 icon={CAMERA_ICON} 
                                 onPress={() => navigation.navigate('UserProfile')}
                             />
@@ -171,7 +242,7 @@ const SeePost = ({ navigation, route }) => {
                             />
                         }
                         <View>
-                            <Text style={seePostStyles.nameText}>
+                            <Text style={[ seePostStyles.tittleText, { paddingLeft: '2%' } ]}>
                                 {user.name} {user.lastName}
                             </Text>
                             <Text style={seePostStyles.text}>
@@ -244,10 +315,10 @@ const SeePost = ({ navigation, route }) => {
                             style={seePostStyles.image}
                         />
                     }     
-                    <View style={seePostStyles.viewReactions}>
+                    <View style={[seePostStyles.viewReactions, seePostStyles.topDivider]}>
                         <View style={seePostStyles.viewRow}>
                             <Icon
-                                style={{ paddingHorizontal: 5 }}
+                                style={{ paddingHorizontal: '3%' }}
                                 name='flame-outline' 
                                 color='gray' 
                                 type='ionicon' 
@@ -257,7 +328,7 @@ const SeePost = ({ navigation, route }) => {
                                 10
                             </Text>
                             <Icon
-                                style={{ paddingHorizontal: 5 }}
+                                style={{ paddingHorizontal: '3%' }}
                                 name='heart-outline' 
                                 color='gray' 
                                 type='ionicon' 
@@ -266,9 +337,18 @@ const SeePost = ({ navigation, route }) => {
                             <Text>
                                 7
                             </Text>
+                            <View style={{  marginLeft: '5%', backgroundColor:'white', borderRadius: 100 }}>
+                                <Icon
+                                    onPress={() => console.log('nueva reacccion')}
+                                    name='add-outline' 
+                                    color='gray' 
+                                    type='ionicon' 
+                                    size={20}
+                                />
+                            </View>
                         </View>
                         {
-                            (false)
+                            (!post.commentFlag)
                             ? null
                             : <View style={seePostStyles.viewRow}>
                                 <Icon
@@ -284,13 +364,117 @@ const SeePost = ({ navigation, route }) => {
                             </View>
                         }
                     </View>  
+                    <Text style={[ seePostStyles.tittleText, seePostStyles.commentaryText ]}>
+                        Commentary
+                    </Text>
+                    <View style={seePostStyles.topDivider}>
+                        {
+                            (!commentaries.length)
+                            ? <View style={seePostStyles.viewResponse}>
+                                <Text style={[ seePostStyles.tittleText, { color: 'gray' }]}>
+                                    {
+                                        (!post.commentFlag)
+                                        ? 'This post does not allow commentsEste post no tienen'
+                                        : 'Be the first to comment!'
+                                    } 
+                                </Text>
+                            </View>
+                            : (
+                                commentaries.map((item, index) => ( 
+                                    <View
+                                        key={index} 
+                                        style={[seePostStyles.viewRow, { marginVertical: '2%' }]}>
+                                        <Avatar 
+                                            rounded 
+                                            size="medium" 
+                                            source={{ uri: `data:image/png;base64,${user.img}` }}
+                                            onPress={() => console.log('goto user')}
+                                        />
+                                        <View>
+                                            <View 
+                                                style={{
+                                                    borderRadius: 10, 
+                                                    backgroundColor: 'white', 
+                                                    padding: '3%', 
+                                                    marginLeft: '2%',
+                                                    
+                                                }}
+                                                >
+                                                <View style={[seePostStyles.viewRow, { justifyContent: 'space-between' }]}>
+                                                    <Text style={seePostStyles.tittleText}>
+                                                        {user.name} {user.lastName}
+                                                    </Text>
+                                                    <Icon
+                                                        onPress={()=> console.log('opciones de comentario')}
+                                                        name='ellipsis-vertical' 
+                                                        color='gray' 
+                                                        type='ionicon' 
+                                                        size={15}
+                                                    />
+                                                </View>
+                                                <View style={[seePostStyles.viewRow, { paddingBottom: 10 }]}>
+                                                    <Text style={{ color: 'gray' }}>
+                                                        { 
+                                                            (item.dateEdit != null)
+                                                            ? `${item.dateEdit} (edited)`
+                                                            : item.dateCreation
+                                                        }
+                                                    </Text>
+                                                    <Icon
+                                                        style={{ marginHorizontal: '3%' }}
+                                                        name='chatbubbles-outline' 
+                                                        color='gray' 
+                                                        type='ionicon' 
+                                                        size={20}
+                                                    />
+                                                    <Text style={{ color:'gray' }}>
+                                                        7
+                                                    </Text>
+                                                </View>
+                                                <Text style={{ color: 'gray' }}>
+                                                    {item.text}
+                                                </Text>
+                                            </View>  
+                                            <View style={seePostStyles.viewReactions}>
+                                                <View style={seePostStyles.viewRow}>
+                                                    <Icon
+                                                        style={{ paddingHorizontal: 5 }}
+                                                        name='flame-outline' 
+                                                        color='gray' 
+                                                        type='ionicon' 
+                                                        size={15}
+                                                    />
+                                                    <Text>
+                                                        10
+                                                    </Text>
+                                                    <Icon
+                                                        style={{ paddingHorizontal: 5 }}
+                                                        name='heart-outline' 
+                                                        color='gray' 
+                                                        type='ionicon' 
+                                                        size={15}
+                                                    />
+                                                    <Text>
+                                                        7
+                                                    </Text>
+                                                </View>
+                                            </View>  
+                                        </View>
+                                    </View>
+                                ))
+                            )
+                        }
+                    </View>
                 </ScrollView>
             </View> 
-            <View style={[ seePostStyles.viewRow, seePostStyles.footer ]}>
+            <View style={[ seePostStyles.viewRow, seePostStyles.footer ]}>  
                 <TextInput
                     placeholder='Write a comment!'  
                     style={seePostStyles.inputComment}
-                />
+                    multiline
+                    onChangeText={text => setNewComment({ ...newComment, text })}
+                    value={newComment.text}
+                />                       
                 <View style={seePostStyles.viewRow}>
                     {
                         (meId != user.id) 
@@ -302,25 +486,25 @@ const SeePost = ({ navigation, route }) => {
                             type='ionicon' 
                             size={30}
                         />    
-                    }
+                    }    
                     <TouchableOpacity
                         style={{ paddingHorizontal: 10 }}
-                        disabled={ //modificar
-                            !(post.tittle.length && (post.description.length || post.img != null))
-                            ? true 
-                            : false
-                        }
-                        onPress={() => console.log('sendCommentary')}
+                        disabled={(newComment.text.length && !newComment.flag) ? false : true}
+                        onPress={sendNewComment}
                         >
-                        <Text 
-                            style={ //modificar
-                                (post.tittle.length && (post.description.length || post.img != null))
-                                ? { color:'#3465d9', fontSize: 20 }
-                                : [seePostStyles.SaveButtonText, { color: 'gray', fontSize: 20, paddingLeft: 5 }]
-                            }
-                            >
-                            Send
-                        </Text>
+                        {
+                            (!newComment.flag) 
+                            ? <Text 
+                                style={ 
+                                    (newComment.text.length)
+                                    ? [ seePostStyles.tittleText, { color: '#3465d9' } ]
+                                    : [ seePostStyles.tittleText, { color: 'gray' } ]
+                                }
+                                >
+                                Send
+                            </Text>
+                            : <ActivityIndicator style={{ paddingHorizontal: '3%' }} size="small" color="#00ff00" />
+                        }   
                     </TouchableOpacity>
                 </View>
             </View>
@@ -351,22 +535,16 @@ const seePostStyles = StyleSheet.create({
         backgroundColor: '#f4f6fc'
     },
 
-    SaveButtonText: {
-        fontWeight: "bold",
-        color: '#3465d9',
-    },
-
-    avatarContainer: {
-        backgroundColor: 'lightgray'
+    topDivider: {
+        borderTopWidth: 1, 
+        borderTopColor: 'lightgray', 
     },
 
     viewReactions: { 
         justifyContent: 'space-between' , 
         flexDirection: 'row', 
-        borderTopWidth: 1, 
-        borderTopColor: 'lightgray', 
-        marginTop: 10, 
-        paddingTop: 10 
+        marginTop: '3%', 
+        paddingTop: '3%' 
     },
 
     image: {
@@ -382,12 +560,22 @@ const seePostStyles = StyleSheet.create({
         flexDirection: 'row'
     },
 
+    viewResponse: {
+        paddingVertical: '3%', 
+        alignItems: 'center' 
+    },
+
     tittleText: {
         fontWeight:'bold',
         fontSize: 20
     },
 
-    inputComment:{
+    commentaryText: {
+        paddingTop: '3%', 
+        color: 'gray'
+    },
+
+    inputComment: {
         borderRadius: 5, 
         backgroundColor: 'lightgray', 
         padding: 5, 
@@ -401,12 +589,6 @@ const seePostStyles = StyleSheet.create({
         backgroundColor:'white', 
         borderRadius: 10, 
         color: 'gray'
-    },
-
-    nameText: {
-        paddingLeft: '2%',
-        fontSize: 20,
-        fontWeight: 'bold'
     },
 
     text: {

@@ -68,6 +68,7 @@ const Home = ({ navigation, route }) => {
 
     const finishOp = () => {
         setPost(POST_BLANK);
+        setLoading(false);
         navigation.goBack();
     }
 
@@ -122,8 +123,6 @@ const Home = ({ navigation, route }) => {
                     break;
             }
         } 
-
-        setLoading(false);
     }
 
     useEffect(() => { 
@@ -166,7 +165,7 @@ const Home = ({ navigation, route }) => {
                                 || post.description != route.params.post.description
                                 || post.connectFlag != route.params.post.connectFlag
                                 || post.commentFlag != route.params.post.commentFlag
-                            )
+                            ) 
                         ) 
                         ? postStyles.saveButton
                         : [postStyles.saveButton, { borderColor: 'gray' }]
@@ -176,17 +175,17 @@ const Home = ({ navigation, route }) => {
                     }
                     disabled={
                         (route.params)
-                        ? (post.tittle.length && (post.description.length || post.img != null))
+                        ? (post.tittle.length && !loading && (post.description.length || post.img != null)) 
                         && (
                             post.tittle != route.params.post.tittle 
                             || post.img != route.params.post.img
                             || post.description != route.params.post.description
                             || post.connectFlag != route.params.post.connectFlag
                             || post.commentFlag != route.params.post.commentFlag
-                        )
+                        ) 
                         ? false
                         : true
-                        : (!((post.tittle.length && (post.description.length || post.img != null)))) 
+                        : !(post.tittle.length && !loading && (post.description.length || post.img != null)) 
                         ? true 
                         : false
                     }
@@ -219,6 +218,7 @@ const Home = ({ navigation, route }) => {
                         }
                     </Text>
                 </TouchableOpacity>
+
             </View>
             <View style={postStyles.body}>
                 {
