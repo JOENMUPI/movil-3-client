@@ -24,25 +24,29 @@ const CAMERA_ICON = {
 
 const NEW_COMMENT_BLANK = {
     text: '', 
-    flag: false
+    flag: false,
+    type: ''
 }
 
 const SeePost = ({ navigation, route }) => { 
     const [meId, setMeId] = useState(0);
     const [user, setUser] = useState(route.params.user);
     const [post, setPost] = useState(route.params.post);
-    const [commentaries, setCommentaries] = useState([]);
+    const [allReactions, setAllreations] = useState([]);
+    const [commentaryFocus, setCommentaryFocus] = useState({});
     const [newComment, setNewComment] = useState(NEW_COMMENT_BLANK);
-    const [bottomSheetFlag, setBottomSheetFlag] = useState(false);
+    const [commentaries, setCommentaries] = useState({ flag: false, data: [] });
+    const [bottomSheetFlag, setBottomSheetFlag] = useState({ type: '', flag: false });
 
+    let commentInput = '';
 
-    const bottomSheetItems = [
+    const bottomSheetItemsOptionsPost = [
         { 
             tittle: 'Edit post',
             icon: 'color-palette-outline',
             style: { paddingLeft: 5, color: 'gray' },
             iconColor: 'gray',
-            onPress: () => handlePressEdit()
+            onPress: () => handlePressEditPost()
         },
         { 
             tittle: 'Delete post',
@@ -64,7 +68,39 @@ const SeePost = ({ navigation, route }) => {
             containerStyle: { backgroundColor: 'red' },
             style: { paddingLeft: 5, color: 'white', fontWeight: 'bold' },
             iconColor: 'white',
-            onPress: () => setBottomSheetFlag(false),
+            onPress: () => setBottomSheetFlag({ ...bottomSheetFlag, flag: false }),
+        },
+    ];
+
+    const bottomSheetItemsOptionComment = [
+        { 
+            tittle: 'Edit comment',
+            icon: 'color-palette-outline',
+            style: { paddingLeft: 5, color: 'gray' },
+            iconColor: 'gray',
+            onPress: () => handleEditComment()
+        },
+        { 
+            tittle: 'Delete comment',
+            icon: 'trash-outline',
+            style: { paddingLeft: 5, color: 'gray' },
+            iconColor: 'gray',
+            onPress: () => deleteCommentAlert()
+        },
+        { 
+            tittle: 'Add reaction',
+            icon: 'heart-outline',
+            style: { paddingLeft: 5, color: 'gray' },
+            iconColor: 'gray',
+            onPress: () => console.log('add reaction') 
+        },
+        {
+            tittle: 'Cancel',
+            icon: 'close-circle-outline',
+            containerStyle: { backgroundColor: 'red' },
+            style: { paddingLeft: 5, color: 'white', fontWeight: 'bold' },
+            iconColor: 'white',
+            onPress: () => setBottomSheetFlag({ ...bottomSheetFlag, flag: false }),
         },
     ];
     
@@ -81,9 +117,26 @@ const SeePost = ({ navigation, route }) => {
         return JSON.parse(await AsyncStorage.getItem('user')).id;
     }
 
-    const handlePressEdit = () => {
-        setBottomSheetFlag(false);
+    const handlePressEditPost = () => {
+        setBottomSheetFlag({ ...bottomSheetFlag, flag: false })
         navigation.navigate('Post', { post: post, callback: callback.bind(this) });
+    }
+
+    const handleOptionComment = (item) => {
+        setCommentaryFocus(item); 
+        setBottomSheetFlag({ type: 'comment', flag: true });
+    }
+
+    const handleEditComment = () => {
+        setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
+        setNewComment({ ...newComment, text: commentaryFocus.text, type: 'edit' });
+        commentInput.focus();
+    }
+
+    const handleEndComentInput = () => {
+        if(newComment.type == 'edit') {
+            sendEditComment();
+        }
     }
 
     const callback = (post) => {
@@ -91,6 +144,7 @@ const SeePost = ({ navigation, route }) => {
     }
 
     const deletePostAlert = () => {
+        setBottomSheetFlag({ bottomSheetFlag, flag: false });
         Alert.alert(
             'Waring', 
             `Are you sure delete ${post.tittle}?`,
@@ -101,7 +155,20 @@ const SeePost = ({ navigation, route }) => {
         );
     }
 
-    const deletePost = async () => {
+    const deleteCommentAlert = () => { 
+        setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
+        Alert.alert(
+            'Waring', 
+            'Are you sure delete this comment?',
+            [
+                { text: "Cancel", style: "cancel" }, 
+                { text: "OK", onPress: () => deleteComment() }
+            ], { cancelable: false }
+        );
+    }
+
+    const deletePost = async () => {  
+        
         const token = await AsyncStorage.getItem('token'); 
         const data = await Http.send('DELETE', `post/${post.id}`, null, token);
         
@@ -133,28 +200,31 @@ const SeePost = ({ navigation, route }) => {
     }
 
     const getComments = async () => {
+        setCommentaries({ ...commentaries, flag: true });
         const token = await AsyncStorage.getItem('token'); 
         const data = await Http.send('GET', `comment/post/${post.id}`, null, token); 
-        
+        let res =  { flag: false, data: [] }
+
         if(!data) {
             Alert.alert('Fatal Error', 'No data from server...');
-            return [];
+            return res;
 
         } else { 
             switch(data.typeResponse) {
                 case 'Success': 
                     toast(data.message); 
-                    return data.body; 
+                    res.data = data.body;
+                    return res; 
                     
                 case 'Fail':
                     data.body.errors.forEach(element => {
                         toast(element.text);
                     });
-                    return [];
+                    return res;
 
                 default:
                     Alert.alert(data.typeResponse, data.message);
-                    return [];
+                    return res;
             }    
         }
     }
@@ -172,10 +242,11 @@ const SeePost = ({ navigation, route }) => {
             switch(data.typeResponse) {
                 case 'Success': 
                     toast(data.message); 
-                    let commentariesAux = commentaries;
+                    let commentariesAux = commentaries.data;
                     
-                    commentariesAux.unshift(data.body);
-                    setCommentaries(commentariesAux);
+                    commentariesAux.unshift(data.body); 
+                    setPost({ ... post, commentaries: commentariesAux.length });
+                    setCommentaries({ ...commentaries, data: commentariesAux });
                     break;
             
                 case 'Fail':
@@ -193,32 +264,117 @@ const SeePost = ({ navigation, route }) => {
         setNewComment(NEW_COMMENT_BLANK);
     }
 
+    const deleteComment = async () => {
+        const token = await AsyncStorage.getItem('token'); 
+        const data = await Http.send('DELETE', `comment/${commentaryFocus.id}`, null, token);
+        
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success': 
+                    toast(data.message);  
+                    let commentariesAux = commentaries.data.filter(i => i.id != commentaryFocus.id);
+
+                    setPost({ ... post, commentaries: commentariesAux.length });
+                    setCommentaries({ ...commentaries, data: commentariesAux });
+                    break;
+            
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        }
+    }
+
+    const sendEditComment = async () => { 
+        setNewComment({ ...newComment, flag: true });
+        const token = await AsyncStorage.getItem('token'); 
+        const commentAux = { ...commentaryFocus, text: newComment.text }
+        const data = await Http.send('PUT', 'comment', commentAux, token);
+        
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+
+        } else {  
+            switch(data.typeResponse) {
+                case 'Success': 
+                    toast(data.message);  
+                    const commentariesAux = commentaries.data.map(item => {
+                        if(item.id == commentAux.id) {
+                            return commentAux;
+                        }   
+                        
+                        return item;
+                    });
+        
+                    setCommentaries({ ...commentaries, data: commentariesAux });
+                    break;
+            
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        }
+    } 
+
+    const BottomSheetItemC = ({ item }) => ( 
+        <ListItem containerStyle={item.containerStyle} onPress={item.onPress}>
+            <ListItem.Content>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Icon
+                        name={item.icon}
+                        color={item.iconColor} 
+                        type='ionicon' 
+                        size={30}
+                    />
+                    <ListItem.Title style={item.style}>{item.tittle}</ListItem.Title>
+                </View>
+            </ListItem.Content>
+        </ListItem>
+    )
+
     useEffect(() => { 
         getMyId().then(res => setMeId(res));
-        getComments().then(res => setCommentaries(res));
+        getComments().then(res => { 
+            setPost({ ... post, commentaries: res.data.length });
+            setCommentaries(res);
+        });
     }, []);
+
 
     return (
         <View style={seePostStyles.container}>
             <BottomSheet
-                isVisible={bottomSheetFlag}
+                isVisible={bottomSheetFlag.flag}
                 containerStyle={{ backgroundColor: 'rgba(0.5, 0.25, 0, 0.2)' }}
                 >
                 {
-                    bottomSheetItems.map((item, index) => (
-                        <ListItem key={index} containerStyle={item.containerStyle} onPress={item.onPress}>
-                            <ListItem.Content>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Icon
-                                        name={item.icon}
-                                        color={item.iconColor} 
-                                        type='ionicon' 
-                                        size={30}
-                                    />
-                                    <ListItem.Title style={item.style}>{item.tittle}</ListItem.Title>
-                                </View>
-                            </ListItem.Content>
-                        </ListItem>
+                    (bottomSheetFlag.type == 'post') 
+                    ? bottomSheetItemsOptionsPost.map((item, index) => (
+                        <BottomSheetItemC
+                            key={index}
+                            item={item}
+                        />
+                    ))
+                    : bottomSheetItemsOptionComment.map((item, index) => (
+                        <BottomSheetItemC
+                            key={index}
+                            item={item}
+                        /> 
                     ))
                 }
             </BottomSheet>
@@ -274,7 +430,7 @@ const SeePost = ({ navigation, route }) => {
                                     />
                                 }
                                 {
-                                    (post.commentFalg)
+                                    (post.commentFlag)
                                     ? <Icon
                                         style={{ paddingLeft: 5 }}
                                         name='chatbubble-outline' 
@@ -317,27 +473,7 @@ const SeePost = ({ navigation, route }) => {
                     }     
                     <View style={[seePostStyles.viewReactions, seePostStyles.topDivider]}>
                         <View style={seePostStyles.viewRow}>
-                            <Icon
-                                style={{ paddingHorizontal: '3%' }}
-                                name='flame-outline' 
-                                color='gray' 
-                                type='ionicon' 
-                                size={15}
-                            />
-                            <Text>
-                                10
-                            </Text>
-                            <Icon
-                                style={{ paddingHorizontal: '3%' }}
-                                name='heart-outline' 
-                                color='gray' 
-                                type='ionicon' 
-                                size={15}
-                            />
-                            <Text>
-                                7
-                            </Text>
-                            <View style={{  marginLeft: '5%', backgroundColor:'white', borderRadius: 100 }}>
+                            <View style={seePostStyles.addIconView}>
                                 <Icon
                                     onPress={() => console.log('nueva reacccion')}
                                     name='add-outline' 
@@ -346,6 +482,36 @@ const SeePost = ({ navigation, route }) => {
                                     size={20}
                                 />
                             </View>
+                            <TouchableOpacity
+                                onPress={() => console.log('agregar reaccion')}
+                                style={seePostStyles.viewRow}
+                                >
+                                <Icon
+                                    style={{ paddingHorizontal: '3%' }}
+                                    name='flame-outline' 
+                                    color='gray' 
+                                    type='ionicon' 
+                                    size={15}
+                                />
+                                <Text>
+                                    10
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => console.log('agregar reaccion')}
+                                style={seePostStyles.viewRow}
+                                >
+                                <Icon
+                                    style={{ paddingHorizontal: '3%' }}
+                                    name='heart-outline' 
+                                    color='gray' 
+                                    type='ionicon' 
+                                    size={15}
+                                />
+                                <Text>
+                                    7
+                                </Text>
+                            </TouchableOpacity>
                         </View>
                         {
                             (!post.commentFlag)
@@ -359,7 +525,7 @@ const SeePost = ({ navigation, route }) => {
                                     size={15}
                                 />
                                 <Text>
-                                    15
+                                    {post.commentaries}
                                 </Text>
                             </View>
                         }
@@ -369,7 +535,9 @@ const SeePost = ({ navigation, route }) => {
                     </Text>
                     <View style={seePostStyles.topDivider}>
                         {
-                            (!commentaries.length)
+                            (commentaries.flag) 
+                            ? <ActivityIndicator size="large" color="#00ff00" />
+                            : (!commentaries.data.length)
                             ? <View style={seePostStyles.viewResponse}>
                                 <Text style={[ seePostStyles.tittleText, { color: 'gray' }]}>
                                     {
@@ -380,7 +548,7 @@ const SeePost = ({ navigation, route }) => {
                                 </Text>
                             </View>
                             : (
-                                commentaries.map((item, index) => ( 
+                                commentaries.data.map((item, index) => ( 
                                     <View
                                         key={index} 
                                         style={[seePostStyles.viewRow, { marginVertical: '2%' }]}>
@@ -397,20 +565,29 @@ const SeePost = ({ navigation, route }) => {
                                                     backgroundColor: 'white', 
                                                     padding: '3%', 
                                                     marginLeft: '2%',
-                                                    
                                                 }}
                                                 >
                                                 <View style={[seePostStyles.viewRow, { justifyContent: 'space-between' }]}>
                                                     <Text style={seePostStyles.tittleText}>
                                                         {user.name} {user.lastName}
                                                     </Text>
-                                                    <Icon
-                                                        onPress={()=> console.log('opciones de comentario')}
-                                                        name='ellipsis-vertical' 
-                                                        color='gray' 
-                                                        type='ionicon' 
-                                                        size={15}
-                                                    />
+                                                    {
+                                                        (meId == user.id)
+                                                        ? <Icon
+                                                            onPress={() => handleOptionComment(item)}
+                                                            name='ellipsis-vertical' 
+                                                            color='gray' 
+                                                            type='ionicon' 
+                                                            size={15}
+                                                        />
+                                                        : <Icon
+                                                            onPress={()=> console.log('respuesta')}
+                                                            name='chatbubble-ellipses-outline' 
+                                                            color='gray' 
+                                                            type='ionicon' 
+                                                            size={15}
+                                                        />   
+                                                    }
                                                 </View>
                                                 <View style={[seePostStyles.viewRow, { paddingBottom: 10 }]}>
                                                     <Text style={{ color: 'gray' }}>
@@ -428,7 +605,7 @@ const SeePost = ({ navigation, route }) => {
                                                         size={20}
                                                     />
                                                     <Text style={{ color:'gray' }}>
-                                                        7
+                                                        {item.responses}
                                                     </Text>
                                                 </View>
                                                 <Text style={{ color: 'gray' }}>
@@ -437,28 +614,47 @@ const SeePost = ({ navigation, route }) => {
                                             </View>  
                                             <View style={seePostStyles.viewReactions}>
                                                 <View style={seePostStyles.viewRow}>
-                                                    <Icon
-                                                        style={{ paddingHorizontal: 5 }}
-                                                        name='flame-outline' 
-                                                        color='gray' 
-                                                        type='ionicon' 
-                                                        size={15}
-                                                    />
-                                                    <Text>
-                                                        10
-                                                    </Text>
-                                                    <Icon
-                                                        style={{ paddingHorizontal: 5 }}
-                                                        name='heart-outline' 
-                                                        color='gray' 
-                                                        type='ionicon' 
-                                                        size={15}
-                                                    />
-                                                    <Text>
-                                                        7
-                                                    </Text>
+                                                    <View style={seePostStyles.addIconView}>
+                                                        <Icon
+                                                            onPress={() => console.log('nueva reacccion')}
+                                                            name='add-outline' 
+                                                            color='gray' 
+                                                            type='ionicon' 
+                                                            size={20}
+                                                        />
+                                                    </View>
+                                                    <TouchableOpacity
+                                                        onPress={() => console.log('agregar reaccion')}
+                                                        style={seePostStyles.viewRow}
+                                                        >
+                                                        <Icon
+                                                            style={{ paddingHorizontal: '3%' }}
+                                                            name='flame-outline' 
+                                                            color='gray' 
+                                                            type='ionicon' 
+                                                            size={15}
+                                                        />
+                                                        <Text>
+                                                            10
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        onPress={() => console.log('agregar reaccion')}
+                                                        style={seePostStyles.viewRow}
+                                                        >
+                                                        <Icon
+                                                            style={{ paddingHorizontal: '3%' }}
+                                                            name='heart-outline' 
+                                                            color='gray' 
+                                                            type='ionicon' 
+                                                            size={15}
+                                                        />
+                                                        <Text>
+                                                            7
+                                                        </Text>
+                                                    </TouchableOpacity>
                                                 </View>
-                                            </View>  
+                                            </View>    
                                         </View>
                                     </View>
                                 ))
@@ -469,10 +665,13 @@ const SeePost = ({ navigation, route }) => {
             </View> 
             <View style={[ seePostStyles.viewRow, seePostStyles.footer ]}>  
                 <TextInput
+                    ref={input => commentInput = input}
                     placeholder='Write a comment!'  
                     style={seePostStyles.inputComment}
-                    multiline
+                    editable={post.commentFlag}
+                    multiline 
                     onChangeText={text => setNewComment({ ...newComment, text })}
+                    onEndEditing={handleEndComentInput}
                     value={newComment.text}
                 />                       
                 <View style={seePostStyles.viewRow}>
@@ -480,7 +679,7 @@ const SeePost = ({ navigation, route }) => {
                         (meId != user.id) 
                         ? null
                         : <Icon
-                            onPress={() => setBottomSheetFlag(true)}
+                            onPress={() => setBottomSheetFlag({ type: 'post', flag: true })}
                             name='ellipsis-vertical' 
                             color='gray' 
                             type='ionicon' 
@@ -489,19 +688,39 @@ const SeePost = ({ navigation, route }) => {
                     }    
                     <TouchableOpacity
                         style={{ paddingHorizontal: 10 }}
-                        disabled={(newComment.text.length && !newComment.flag) ? false : true}
-                        onPress={sendNewComment}
+                        disabled={
+                            (newComment.type == 'edit')
+                            ? (newComment.text.length && newComment.text != commentaryFocus.text && !newComment.flag)
+                            ? false
+                            : true
+                            : (newComment.text.length && !newComment.flag) 
+                            ? false 
+                            : true
+                        }
+                        onPress={
+                            (newComment.type == 'edit')
+                            ? sendEditComment
+                            : sendNewComment
+                        }
                         >
                         {
                             (!newComment.flag) 
                             ? <Text 
                                 style={ 
-                                    (newComment.text.length)
+                                    (newComment.type == 'edit')
+                                    ? (newComment.text.length && newComment.text != commentaryFocus.text)
+                                    ? [ seePostStyles.tittleText, { color: '#3465d9' } ]
+                                    : [ seePostStyles.tittleText, { color: 'gray' } ]
+                                    : (newComment.text.length)
                                     ? [ seePostStyles.tittleText, { color: '#3465d9' } ]
                                     : [ seePostStyles.tittleText, { color: 'gray' } ]
                                 }
                                 >
-                                Send
+                                {
+                                    (newComment.type == 'edit' && newComment.text.length)
+                                    ? 'Edit'
+                                    : 'Send'
+                                }
                             </Text>
                             : <ActivityIndicator style={{ paddingHorizontal: '3%' }} size="small" color="#00ff00" />
                         }   
@@ -533,6 +752,12 @@ const seePostStyles = StyleSheet.create({
         paddingTop: '2%',
         paddingHorizontal: '3%',
         backgroundColor: '#f4f6fc'
+    },
+
+    addIconView: {
+        marginLeft: '5%', 
+        backgroundColor:'white', 
+        borderRadius: 100 
     },
 
     topDivider: {

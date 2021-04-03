@@ -426,7 +426,7 @@ const SignUp = ({ navigation }) => {
             {
                 (step != 3)
                 ? null
-                :<TouchableOpacity
+                : <TouchableOpacity
                     disabled={confirmationCode.data.length != 0}
                     onPress={handleSendCodeButton} 
                     style={
