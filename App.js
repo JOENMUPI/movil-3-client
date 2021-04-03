@@ -5,6 +5,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 
 import userDetails from './src/Screen/userDetails';
 import EditProfile from './src/Screen/EditProfile';
+import skills from './src/Screen/skills';
 
 const Stack = createStackNavigator();
 
@@ -12,6 +13,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
+          <Stack.Screen name="skills" component={skills} options={{ title: "skills", headerShown: false }}></Stack.Screen>
          <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: "EditProfile", headerShown: false }}></Stack.Screen>
         <Stack.Screen name="userDetails" component={userDetails} options={{ title: "userDetails", headerShown: false }}></Stack.Screen>
 
