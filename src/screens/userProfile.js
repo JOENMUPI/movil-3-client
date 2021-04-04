@@ -179,10 +179,9 @@ const UserProfile = ({ navigation, route }) => {
                     {
                         (img == null)
                         ? <Avatar 
-                            rounded
-                            size="medium"
-                            containerStyle={{ backgroundColor: 'lightgray' }}
-                            icon={{ name: 'camera-outline', color: 'white', type: 'ionicon', size: 40 }} 
+                            rounded 
+                            source={{ uri: `data:image/png;base64,${user.img}` }}
+                            size="medium" 
                         />
                         : <Image
                             source={{ uri: `data:image/png;base64,${img}` }}
@@ -203,26 +202,45 @@ const UserProfile = ({ navigation, route }) => {
         </View>
     )
 
-    const line2ActivityQualification = (description) => (
+    const line2Activity = (dateCreation, dateEdit) => (
         <Text style={userDetailStyles.text}>
-            {description}
+            {
+                (dateEdit != null)
+                ? `Last edit: ${dateEdit}`
+                : dateCreation
+            }
         </Text>
     )
 
-    const line3Activity = (reactions) => (
-        <View style={userDetailStyles.viewRow}>
+    const line3Activity = (reactions, commentaries, commentFlag) => (
+        <View style={[userDetailStyles.viewRow, { justifyContent: 'space-between' }]}>
             {
-                reactions.map((reaction, index) => (
-                    <View
-                        key={index} 
-                        style={userDetailStyles.viewReaction}>
-                        <Icon name={reaction.type} color='gray' type='ionicon' size={15} />
-                        <Text style={userDetailStyles.text}>
-                            {reaction.num}
-                        </Text>
-                    </View>
-                ))
+                (!commentFlag)
+                ? null
+                : <View style={userDetailStyles.viewRow}>
+                    <Icon name='chatbubbles-outline' color='gray' type='ionicon' size={15} />
+                    <Text style={userDetailStyles.text}>
+                        {commentaries}
+                    </Text>
+                </View>
             }
+            <View style={userDetailStyles.viewRow}>
+                {
+                    reactions.map((reaction, index) => {
+                            (reaction.num < 1)
+                            ? null
+                            : <View
+                                key={index} 
+                                style={userDetailStyles.viewReaction}>
+                                <Icon name={reaction.description} color='gray' type='ionicon' size={15} />
+                                <Text style={userDetailStyles.text}>
+                                    {reaction.num}
+                                </Text>
+                            </View>
+                        }    
+                    )
+                }
+            </View> 
         </View>
     )
 
@@ -231,6 +249,13 @@ const UserProfile = ({ navigation, route }) => {
             {enterprise} - {typeJob}
         </Text>
     )
+
+    const line2Qualification = (description) => (
+        <Text style={userDetailStyles.text}>
+            {description}
+        </Text>
+    )
+    
         // aqui hay q procesar el timeStamp q le llegara...
     const line3ExperienceQualification = (dateInit, dateEnd) => ( 
         <Text style={userDetailStyles.text}>
@@ -370,8 +395,8 @@ const UserProfile = ({ navigation, route }) => {
                                             onPress={() => navigation.navigate('SeePost', { user, post: item, callback: postCallback.bind(this) })}
                                             img={item.img}
                                             tittle={item.tittle}
-                                            line2={line2ActivityQualification(item.description)}
-                                            line3={line3Activity(item.reactions)}
+                                            line2={line2Activity(item.dateCreation, item.dateEdit)}
+                                            line3={line3Activity(item.reactions, item.commentaries, item.commentFlag)}
                                         />
                                     </ListItem>
                                 ))
@@ -397,7 +422,7 @@ const UserProfile = ({ navigation, route }) => {
                                         <ListItemWithImgC 
                                             img={item.img}
                                             tittle={item.university}
-                                            line2={line2ActivityQualification(item.qualification)}
+                                            line2={line2Qualification(item.qualification)}
                                             line3={line3ExperienceQualification(item.dateInit, item.dateEnd)}
                                         />
                                     </ListItem>
@@ -561,7 +586,8 @@ const userDetailStyles = StyleSheet.create({
     },
 
     viewRow: {
-        flexDirection: 'row' 
+        flexDirection: 'row',
+        alignItems: 'center' 
     },
 
     viewReaction: {

@@ -9,6 +9,7 @@ import {
     ToastAndroid,
     ActivityIndicator,
     Alert,
+    Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import { Icon, Avatar, Image, BottomSheet, ListItem } from 'react-native-elements';
@@ -28,15 +29,15 @@ const NEW_COMMENT_BLANK = {
     type: ''
 }
 
-const SeePost = ({ navigation, route }) => { 
+const SeePost = ({ navigation, route }) => {  
     const [meId, setMeId] = useState(0);
     const [user, setUser] = useState(route.params.user);
     const [post, setPost] = useState(route.params.post);
-    const [allReactions, setAllreations] = useState([]);
     const [commentaryFocus, setCommentaryFocus] = useState({});
     const [newComment, setNewComment] = useState(NEW_COMMENT_BLANK);
     const [commentaries, setCommentaries] = useState({ flag: false, data: [] });
     const [bottomSheetFlag, setBottomSheetFlag] = useState({ type: '', flag: false });
+    const [modal, setModal] = useState(false); 
 
     let commentInput = '';
 
@@ -133,9 +134,10 @@ const SeePost = ({ navigation, route }) => {
         commentInput.focus();
     }
 
-    const handleEndComentInput = () => {
+    const cancelEdit = () => {
         if(newComment.type == 'edit') {
-            sendEditComment();
+            toast('Edit canceled');
+            setNewComment(NEW_COMMENT_BLANK);
         }
     }
 
@@ -167,8 +169,25 @@ const SeePost = ({ navigation, route }) => {
         );
     }
 
-    const deletePost = async () => {  
-        
+    const handleReaction = (reactionId) => { 
+        const reactionsAux = post.reactions.map(reaction => { 
+            if(reaction.id ==  reactionId) {
+                let aux = reaction;
+                
+                aux.me = !reaction.me;
+                (aux.me)  
+                ? aux = { ...aux, num: aux.num + 1 }
+                : aux = { ...aux, num: aux.num - 1 }
+            }
+            sendReaction(aux);    
+            return aux;
+        });
+
+        setModal(false);
+        setPost({ ...post, reactions: reactionsAux });
+    }
+
+    const deletePost = async () => {      
         const token = await AsyncStorage.getItem('token'); 
         const data = await Http.send('DELETE', `post/${post.id}`, null, token);
         
@@ -294,6 +313,41 @@ const SeePost = ({ navigation, route }) => {
         }
     }
 
+    const sendReaction = async (reaction) => { // revisar
+        const token = await AsyncStorage.getItem('token'); 
+        let dataAux = { postId: post.id, reactionId: reaction.id }
+        let data;
+
+        (reaction.me)
+        ? data = await Http.send('POST', 'reaction', dataAux, token)
+        : data = await Http.send('DELETE', `reaction/${post.id}/${reaction.id}`, null, token);
+
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success': 
+                    toast(data.message);  
+                    let commentariesAux = commentaries.data.filter(i => i.id != commentaryFocus.id);
+
+                    setPost({ ... post, commentaries: commentariesAux.length });
+                    setCommentaries({ ...commentaries, data: commentariesAux });
+                    break;
+            
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        }
+    }
+
     const sendEditComment = async () => { 
         setNewComment({ ...newComment, flag: true });
         const token = await AsyncStorage.getItem('token'); 
@@ -358,6 +412,50 @@ const SeePost = ({ navigation, route }) => {
 
     return (
         <View style={seePostStyles.container}>
+            <Modal
+                animationType="slide"
+                transparent
+                visible={modal}
+                onRequestClose={() => setModal(false)}
+                >
+                <View style={{
+                        flex: 1,
+                        justifyContent: "center",
+                        alignItems: "center",
+                    }} 
+                    >
+                    <View style={{
+                        margin: '10%',
+                        backgroundColor: "white",
+                        borderRadius: 10,
+                        padding: '10%',
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.25,
+                        shadowRadius: 4,
+                        elevation: 5
+                    }}
+                    >
+                        <Text style={[ seePostStyles.tittleText, { color: 'gray' } ]}>
+                            Select a icon!
+                        </Text>
+                        <ScrollView>
+                            {
+                                post.reactions.map((item, index) => (        
+                                    <Icon
+                                        onPress={() => handleReaction(item.id)}
+                                        key={index}
+                                        name={item.description}
+                                        color='gray' 
+                                        type='ionicon' 
+                                        size={30}
+                                    />
+                                ))
+                            }
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
             <BottomSheet
                 isVisible={bottomSheetFlag.flag}
                 containerStyle={{ backgroundColor: 'rgba(0.5, 0.25, 0, 0.2)' }}
@@ -375,7 +473,7 @@ const SeePost = ({ navigation, route }) => {
                             key={index}
                             item={item}
                         /> 
-                    ))
+                    )) 
                 }
             </BottomSheet>
             <View style={seePostStyles.body}>  
@@ -433,14 +531,14 @@ const SeePost = ({ navigation, route }) => {
                                     (post.commentFlag)
                                     ? <Icon
                                         style={{ paddingLeft: 5 }}
-                                        name='chatbubble-outline' 
+                                        name='chatbubble-ellipses-outline' 
                                         color='gray' 
                                         type='ionicon' 
                                         size={15}
                                     />
                                     : <Icon
                                         style={{ paddingLeft: 5 }}
-                                        name='chatbubble-ellipses-outline' 
+                                        name='chatbubble-outline' 
                                         color='gray' 
                                         type='ionicon' 
                                         size={15}
@@ -475,43 +573,38 @@ const SeePost = ({ navigation, route }) => {
                         <View style={seePostStyles.viewRow}>
                             <View style={seePostStyles.addIconView}>
                                 <Icon
-                                    onPress={() => console.log('nueva reacccion')}
+                                    onPress={() => setModal(true)}
                                     name='add-outline' 
                                     color='gray' 
                                     type='ionicon' 
                                     size={20}
                                 />
                             </View>
-                            <TouchableOpacity
-                                onPress={() => console.log('agregar reaccion')}
-                                style={seePostStyles.viewRow}
-                                >
-                                <Icon
-                                    style={{ paddingHorizontal: '3%' }}
-                                    name='flame-outline' 
-                                    color='gray' 
-                                    type='ionicon' 
-                                    size={15}
-                                />
-                                <Text>
-                                    10
-                                </Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                onPress={() => console.log('agregar reaccion')}
-                                style={seePostStyles.viewRow}
-                                >
-                                <Icon
-                                    style={{ paddingHorizontal: '3%' }}
-                                    name='heart-outline' 
-                                    color='gray' 
-                                    type='ionicon' 
-                                    size={15}
-                                />
-                                <Text>
-                                    7
-                                </Text>
-                            </TouchableOpacity>
+                            {
+                                (!post)
+                                ? null
+                                : post.reactions.map((item, index) => (
+
+                                    !(item.num > 0)
+                                    ? null
+                                    : 
+                                    <TouchableOpacity 
+                                        onPress={() => handleReaction(item.id)}
+                                        style={[seePostStyles.viewRow, { marginLeft: 10 }]}
+                                        key={index}
+                                        >
+                                        <Icon
+                                            name={item.description} 
+                                            color='gray' 
+                                            type='ionicon' 
+                                            size={15}
+                                        />
+                                        <Text>
+                                            {item.num}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )) 
+                            }
                         </View>
                         {
                             (!post.commentFlag)
@@ -555,7 +648,7 @@ const SeePost = ({ navigation, route }) => {
                                         <Avatar 
                                             rounded 
                                             size="medium" 
-                                            source={{ uri: `data:image/png;base64,${user.img}` }}
+                                            source={{ uri: `data:image/png;base64,${item.img}` }}
                                             onPress={() => console.log('goto user')}
                                         />
                                         <View>
@@ -569,7 +662,7 @@ const SeePost = ({ navigation, route }) => {
                                                 >
                                                 <View style={[seePostStyles.viewRow, { justifyContent: 'space-between' }]}>
                                                     <Text style={seePostStyles.tittleText}>
-                                                        {user.name} {user.lastName}
+                                                        {item.name} {item.lastName}
                                                     </Text>
                                                     {
                                                         (meId == user.id)
@@ -597,16 +690,22 @@ const SeePost = ({ navigation, route }) => {
                                                             : item.dateCreation
                                                         }
                                                     </Text>
-                                                    <Icon
-                                                        style={{ marginHorizontal: '3%' }}
-                                                        name='chatbubbles-outline' 
-                                                        color='gray' 
-                                                        type='ionicon' 
-                                                        size={20}
-                                                    />
-                                                    <Text style={{ color:'gray' }}>
-                                                        {item.responses}
-                                                    </Text>
+                                                    {
+                                                        (item.responses == 0)
+                                                        ? null
+                                                        : <View style={seePostStyles.viewRow}>
+                                                            <Icon
+                                                                style={{ marginHorizontal: '3%' }}
+                                                                name='chatbubbles-outline' 
+                                                                color='gray' 
+                                                                type='ionicon' 
+                                                                size={20}
+                                                            />
+                                                            <Text style={{ color:'gray' }}>
+                                                                {item.responses}
+                                                            </Text>
+                                                        </View>
+                                                    }
                                                 </View>
                                                 <Text style={{ color: 'gray' }}>
                                                     {item.text}
@@ -671,7 +770,7 @@ const SeePost = ({ navigation, route }) => {
                     editable={post.commentFlag}
                     multiline 
                     onChangeText={text => setNewComment({ ...newComment, text })}
-                    onEndEditing={handleEndComentInput}
+                    onEndEditing={cancelEdit}
                     value={newComment.text}
                 />                       
                 <View style={seePostStyles.viewRow}>
@@ -684,7 +783,7 @@ const SeePost = ({ navigation, route }) => {
                             color='gray' 
                             type='ionicon' 
                             size={30}
-                        />    
+                        />  
                     }    
                     <TouchableOpacity
                         style={{ paddingHorizontal: 10 }}
