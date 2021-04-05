@@ -29,7 +29,7 @@ const NEW_COMMENT_BLANK = {
     type: ''
 }
 
-const SeePost = ({ navigation, route }) => {  
+const SeePost = ({ navigation, route }) => {  console.log('reacciones:', route.params.post.reactions);
     const [meId, setMeId] = useState(0);
     const [user, setUser] = useState(route.params.user);
     const [post, setPost] = useState(route.params.post);
@@ -171,15 +171,17 @@ const SeePost = ({ navigation, route }) => {
 
     const handleReaction = (reactionId) => { 
         const reactionsAux = post.reactions.map(reaction => { 
-            if(reaction.id ==  reactionId) {
-                let aux = reaction;
-                
+            let aux = reaction;
+            
+            if(reaction.id ==  reactionId) {   
                 aux.me = !reaction.me;
                 (aux.me)  
                 ? aux = { ...aux, num: aux.num + 1 }
                 : aux = { ...aux, num: aux.num - 1 }
+
+                sendReaction(aux);
             }
-            sendReaction(aux);    
+                
             return aux;
         });
 
@@ -313,14 +315,13 @@ const SeePost = ({ navigation, route }) => {
         }
     }
 
-    const sendReaction = async (reaction) => { // revisar
+    const sendReaction = async (reaction) => { 
         const token = await AsyncStorage.getItem('token'); 
-        let dataAux = { postId: post.id, reactionId: reaction.id }
-        let data;
+        let data; 
 
         (reaction.me)
-        ? data = await Http.send('POST', 'reaction', dataAux, token)
-        : data = await Http.send('DELETE', `reaction/${post.id}/${reaction.id}`, null, token);
+        ? data = await Http.send('POST', 'reaction/post', { postId: post.id, reactionId: reaction.id }, token)
+        : data = await Http.send('DELETE', `reaction/post/${post.id}/${reaction.id}`, null, token);
 
         if(!data) {
             Alert.alert('Fatal Error', 'No data from server...');
@@ -329,10 +330,6 @@ const SeePost = ({ navigation, route }) => {
             switch(data.typeResponse) {
                 case 'Success': 
                     toast(data.message);  
-                    let commentariesAux = commentaries.data.filter(i => i.id != commentaryFocus.id);
-
-                    setPost({ ... post, commentaries: commentariesAux.length });
-                    setCommentaries({ ...commentaries, data: commentariesAux });
                     break;
             
                 case 'Fail':
@@ -635,7 +632,7 @@ const SeePost = ({ navigation, route }) => {
                                 <Text style={[ seePostStyles.tittleText, { color: 'gray' }]}>
                                     {
                                         (!post.commentFlag)
-                                        ? 'This post does not allow commentsEste post no tienen'
+                                        ? 'This post does not allow comments'
                                         : 'Be the first to comment!'
                                     } 
                                 </Text>
@@ -649,7 +646,7 @@ const SeePost = ({ navigation, route }) => {
                                             rounded 
                                             size="medium" 
                                             source={{ uri: `data:image/png;base64,${item.img}` }}
-                                            onPress={() => console.log('goto user')}
+                                            onPress={() => navigation.navigate('UserProfile', item.userId)}
                                         />
                                         <View>
                                             <View 

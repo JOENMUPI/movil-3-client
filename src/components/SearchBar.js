@@ -21,14 +21,14 @@ const SearchBarC = ({ arrayData, vissible, onCancel, onPressItem }) => {
 
     const renderItem = ({ item }) => (
         <View style={styles.viewItem}>
-        <TouchableOpacity 
-            onPress={() => { onPressItem(item); setData([]); setValue(''); }}
-            style={styles.item}
-            >
-            <View style={styles.viewText}>
-                <Text style={styles.textItem}>{item.tittle}</Text>
-            </View>
-        </TouchableOpacity>
+            <TouchableOpacity 
+                onPress={() => { onPressItem(item); setData([]); setValue(''); }}
+                style={styles.item}
+                >
+                <View style={styles.viewText}>
+                    <Text style={styles.textItem}>{item.tittle}</Text>
+                </View>
+            </TouchableOpacity>
         </View>
     )
     

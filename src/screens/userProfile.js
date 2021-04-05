@@ -14,6 +14,7 @@ import { Icon, ListItem, Avatar, Image } from 'react-native-elements';
 import AsyncStorage from '@react-native-community/async-storage';
 
 import Http from '../components/Http';
+import ModalListC from '../components/modalList';
 
 const EXPERIENCE_BASE = [
     {
@@ -70,15 +71,15 @@ const IDIOMS_BASE = [
 ]
 
 const AWARDS_BASE = [
-    { description: 'Award 1', date: '2020' },
-    { description: 'Award 2',   date: '2017' },
-    { description: 'Award 3', date: '2015' },
+    { id: 1, description: 'Award 1', date: '2020' },
+    { id: 2, description: 'Award 2',   date: '2017' },
+    { id: 3, description: 'Award 3', date: '2015' },
 ]
 
 const SKILLS_BASE = [
-    { description: 'Skill 1' },
-    { description: 'Skill 2' },
-    { description: 'Skill 3' },
+    { id: 3, description: 'Skill 1' },
+    { id: 2, description: 'Skill 2' },
+    { id: 1, description: 'Skill 3' },
 ]
 
 const USER_BASE = {
@@ -98,6 +99,7 @@ const USER_BASE = {
 const UserProfile = ({ navigation, route }) => { 
     const [user, setUser] = useState(USER_BASE);
     const [loading, setLoading] = useState(false);
+    const [modalList, setModalList] = useState({ tittle: '', flag: false });
 
     const toast = (message) => { 
         ToastAndroid.showWithGravity(
@@ -169,6 +171,23 @@ const UserProfile = ({ navigation, route }) => {
         } 
     }
 
+    const renderItemSkill = ({ item }) => ( 
+        <View style={userDetailStyles.viewItem}> 
+            <View style={userDetailStyles.item}>
+                <Text style={{ fontSize: 15 }}>
+                    {item.description}
+                </Text> 
+                <Icon
+                    onPress={() => renderItemOptions(item)}
+                    name='ellipsis-vertical'
+                    color='gray'
+                    type='ionicon'
+                    size={30}
+                />
+            </View>
+        </View>
+      )
+
     const ListItemWithImgC = ({ img, tittle, line2, line3, onPress }) => ( 
         <View style={userDetailStyles.viewRow}> 
             <ListItem.Content >
@@ -213,7 +232,7 @@ const UserProfile = ({ navigation, route }) => {
     )
 
     const line3Activity = (reactions, commentaries, commentFlag) => (
-        <View style={[userDetailStyles.viewRow, { justifyContent: 'space-between' }]}>
+        <View style={[ userDetailStyles.viewRow, { justifyContent: 'space-between' } ]}>
             {
                 (!commentFlag)
                 ? null
@@ -226,19 +245,18 @@ const UserProfile = ({ navigation, route }) => {
             }
             <View style={userDetailStyles.viewRow}>
                 {
-                    reactions.map((reaction, index) => {
-                            (reaction.num < 1)
-                            ? null
-                            : <View
-                                key={index} 
-                                style={userDetailStyles.viewReaction}>
-                                <Icon name={reaction.description} color='gray' type='ionicon' size={15} />
-                                <Text style={userDetailStyles.text}>
-                                    {reaction.num}
-                                </Text>
-                            </View>
-                        }    
-                    )
+                    reactions.map((reaction, index) => { //esta parte dejo de funcionar, revisar!
+                        !(reaction.num > 0)
+                        ? null
+                        : <View
+                            key={index} 
+                            style={userDetailStyles.viewReaction}>
+                            <Icon name={reaction.description} color='gray' type='ionicon' size={15} />
+                            <Text style={userDetailStyles.text}>
+                                {reaction.num}
+                            </Text>
+                        </View>
+                    })
                 }
             </View> 
         </View>
@@ -296,10 +314,6 @@ const UserProfile = ({ navigation, route }) => {
         console.log('hi activities');
     }
 
-    const gotoUserLanguages = () => {
-        console.log('hi idioms');
-    }
-
     const gotoUserExperiences = () => {
         console.log('hi experiences');
     }
@@ -308,13 +322,46 @@ const UserProfile = ({ navigation, route }) => {
         console.log('hi qualifications');
     }
 
-    const gotoawards = () => {
-        console.log('hi awards');
+    const handleAddPress = () => {
+        switch(modalList.tittle) {
+            case 'Awards':
+                console.log('agregar Award');
+                break;
+
+            case 'Idioms':
+                console.log('agregar Idiom');
+                break;
+                
+            case 'Skills':
+                console.log('agregar skill');
+                break;
+
+            default:
+                Alert.alert('tittle no match', `Error on handlePress "${modalList.tittle}"`);
+                break;
+        }
     }
 
-    const gotoSkill = () => {
-        console.log('hi skill');
+    const renderItemOptions = (item) => {
+        switch(modalList.tittle) {
+            case 'Awards':
+                console.log('opcion de Award');
+                break;
+
+            case 'Idioms':
+                console.log('opcion de Idiom');
+                break;
+
+            case 'Skills':
+                console.log('opcion de skill');
+                break;
+                
+            default:
+                Alert.alert('tittle no match', `Error on renderItemOptions "${modalList.tittle}"`);
+                break;
+        }
     }
+
 
     useEffect(() => {
         getUser().then(res => { 
@@ -337,6 +384,27 @@ const UserProfile = ({ navigation, route }) => {
     
     return (
         <View style={userDetailStyles.container}>
+            <ModalListC
+                tittle={modalList.tittle}
+                vissible={modalList.flag}
+                addAction={handleAddPress}
+                onCancel={() => setModalList({ ...modalList, flag: false })}
+                renderItem={
+                    (modalList.tittle == ('Skills' || 'Idioms' || 'Awards'))
+                    ? renderItemSkill
+                    : null
+                }
+                
+                data={
+                    (modalList.tittle == 'Skills')
+                    ? user.skills
+                    : (modalList.tittle == 'Awards')
+                    ? user.awards
+                    : (modalList.tittle == 'Idioms')
+                    ? user.idioms
+                    : []
+                }
+            />
             {
                 (loading)
                 ? <ActivityIndicator size="large" color="#00ff00" />
@@ -378,7 +446,7 @@ const UserProfile = ({ navigation, route }) => {
                             </Text>
                         </View>
                     }
-                    { 
+                    {
                         (user.activities.length < 1) 
                         ? null
                         : <View style={userDetailStyles.viewList}>
@@ -465,7 +533,7 @@ const UserProfile = ({ navigation, route }) => {
                         ? null
                         : <View style={userDetailStyles.viewList}>
                             <Text style={userDetailStyles.tittleList}>
-                                Idioms
+                                idioms
                             </Text>
                             {
                                 user.idioms.map(item => (
@@ -478,7 +546,7 @@ const UserProfile = ({ navigation, route }) => {
                                 ))
                             }
                             <SeeMoreButtonC
-                                action={gotoUserLanguages}
+                                action={()=> setModalList({ tittle: 'Idioms', flag: true })}
                             />
                         </View>
                     }
@@ -500,7 +568,7 @@ const UserProfile = ({ navigation, route }) => {
                                 ))
                             }
                             <SeeMoreButtonC
-                                action={gotoawards} 
+                                action={()=> setModalList({ tittle: 'Awards', flag: true })}
                             />
                         </View>
                     }
@@ -509,7 +577,7 @@ const UserProfile = ({ navigation, route }) => {
                         ? null
                         : <View style={userDetailStyles.viewList}>
                             <Text style={userDetailStyles.tittleList}>
-                                Skill
+                                Skills
                             </Text>
                             {
                                 user.skills.map((item, index) => (
@@ -521,7 +589,7 @@ const UserProfile = ({ navigation, route }) => {
                                 ))
                             }
                             <SeeMoreButtonC
-                                action={gotoSkill}
+                                action={()=> setModalList({ tittle: 'Skills', flag: true })}
                             />
                         </View>
                     }
@@ -597,5 +665,21 @@ const userDetailStyles = StyleSheet.create({
 
     text: {
         color: 'gray'
-    }
+    },
+
+    viewItem: {
+        padding: 10,
+        width: '100%',
+        backgroundColor: '#f4f6fc',
+    },
+
+    item: {
+        paddingVertical: '5%',
+        paddingHorizontal: '5%',
+        backgroundColor: 'white' , 
+        borderRadius: 10, 
+        alignItems: 'center', 
+        flexDirection: 'row',
+        justifyContent: 'space-between' 
+    },
 });
