@@ -29,7 +29,7 @@ const NEW_COMMENT_BLANK = {
     type: ''
 }
 
-const SeePost = ({ navigation, route }) => {  console.log('reacciones:', route.params.post.reactions);
+const SeePost = ({ navigation, route }) => {  
     const [meId, setMeId] = useState(0);
     const [user, setUser] = useState(route.params.user);
     const [post, setPost] = useState(route.params.post);

@@ -21,7 +21,7 @@ const ModalListC = ({ data, vissible, onCancel, addPress, renderItem, tittle }) 
                 type='ionicon'
                 size={30}
                 onPress={addPress}
-            />
+            /> 
         </View>
         {
             !(data.length)
@@ -32,7 +32,7 @@ const ModalListC = ({ data, vissible, onCancel, addPress, renderItem, tittle }) 
                 style = {styles.list}
                 data={data}
                 renderItem={renderItem}
-                //keyExtractor={item => item.id.toString()}
+                keyExtractor={(item, index) => index.toString()}
             />
         }
     </Modal>
@@ -57,7 +57,8 @@ export const styles = StyleSheet.create({
         backgroundColor: '#f4f6fc', 
         fontSize: 25, 
         color: 'gray', 
-        textAlign: "center"
+        textAlign: "center",
+        height: '100%'
     },
 
     modal: {
@@ -74,7 +75,7 @@ export const styles = StyleSheet.create({
         width: '100%',
         justifyContent: 'space-between',
         alignItems: "center",
-        paddingHorizontal: 10,
+        paddingHorizontal: '5%',
         flexDirection: 'row',
     },
 });

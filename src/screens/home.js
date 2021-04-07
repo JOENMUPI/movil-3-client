@@ -25,17 +25,17 @@ const CAMERA_ICON = {
 
 
 const Home = ({ navigation, route }) => { 
-    const [img, setImg] = useState(null);
+    const [me, setMe] = useState(null);
     const [enterprise, setEnterprise] = useState(false);
     const [searchBar, setSearchBar] = useState(false);
     
-    getImg = async () => {
-        return JSON.parse(await AsyncStorage.getItem('user')).img;
+    getMe = async () => {
+        return JSON.parse(await AsyncStorage.getItem('user'));
     }
 
     useEffect(() => {
-        getImg().then(res => { 
-            setImg(res);
+        getMe().then(res => {   
+            setMe(res);
         }); 
     }, []);
 
@@ -43,19 +43,19 @@ const Home = ({ navigation, route }) => {
         <View style={homeStyles.container}>
             <View style={[ homeStyles.viewRow, homeStyles.header ]}>
                 {
-                    (img == null)
+                    (me == null)
                     ? <Avatar 
                         rounded
                         size="small"
                         containerStyle={homeStyles.avatarContainer}
                         icon={CAMERA_ICON} 
-                        onPress={() => navigation.navigate('UserProfile', { userId: 'me' })}
+                        onPress={() => navigation.navigate('UserProfile', { userId: me.id })}
                     />
                     : <Avatar 
                         rounded 
                         size="small" 
-                        source={{ uri: `data:image/png;base64,${img}` }}
-                        onPress={() => navigation.navigate('UserProfile', { userId: 'me' })}
+                        source={{ uri: `data:image/png;base64,${me.img}` }}
+                        onPress={() => navigation.navigate('UserProfile', { userId: me.id })}
                     />
                 }
                 <TouchableOpacity

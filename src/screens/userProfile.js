@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react'; 
 import { 
-    View, 
-    Text, 
-    TouchableOpacity, 
-    ScrollView,
+    ActivityIndicator, 
     Alert,
+    Modal,
+    ScrollView,
     StyleSheet,
+    Text,
+    TextInput,
     ToastAndroid,
-    ActivityIndicator
+    TouchableOpacity, 
+    View
 } from 'react-native';
 
-import { Icon, ListItem, Avatar, Image } from 'react-native-elements';
+import { Icon, ListItem, Avatar, Image, BottomSheet } from 'react-native-elements';
 import AsyncStorage from '@react-native-community/async-storage';
 
 import Http from '../components/Http';
@@ -76,30 +78,55 @@ const AWARDS_BASE = [
     { id: 3, description: 'Award 3', date: '2015' },
 ]
 
-const SKILLS_BASE = [
-    { id: 3, description: 'Skill 1' },
-    { id: 2, description: 'Skill 2' },
-    { id: 1, description: 'Skill 3' },
-]
-
 const USER_BASE = {
     img: null,
     name: 'name',
     lastName: 'LastName',
     email: 'email@gmail.com',
     country: 'venezuela',
-    skills: null,
-    awards: null,
+    skills: [],
+    awards: [],
+    interest: [],
     idioms: [],
     qualifications: [],
     experiences: [],
     activities: []
 }
 
+const BSO_BLANK = [
+    { 
+        tittle: 'Edit',
+        icon: 'color-palette-outline',
+        style: { paddingLeft: 5, color: 'gray' },
+        iconColor: 'gray',
+        onPress: () => {}
+    },
+    { 
+        tittle: 'Delete',
+        icon: 'trash-outline',
+        style: { paddingLeft: 5, color: 'gray' },
+        iconColor: 'gray',
+        onPress: () => {}
+    },
+    {
+        tittle: 'Cancel',
+        icon: 'close-circle-outline',
+        containerStyle: { backgroundColor: 'red' },
+        style: { paddingLeft: 5, color: 'white', fontWeight: 'bold' },
+        iconColor: 'white',
+        onPress: () => {}
+    }
+];
+
 const UserProfile = ({ navigation, route }) => { 
     const [user, setUser] = useState(USER_BASE);
+    const [me, setMe] = useState({ id: 0 });
+    const [userJson, setUserJson] = useState({ description: '' });
     const [loading, setLoading] = useState(false);
     const [modalList, setModalList] = useState({ tittle: '', flag: false });
+    const [modal, setModal] = useState({ type: '', flag: false, editFlag: false });
+    const [bottomSheetFlag, setBottomSheetFlag] = useState({ flag: false, options: BSO_BLANK });
+
 
     const toast = (message) => { 
         ToastAndroid.showWithGravity(
@@ -107,6 +134,10 @@ const UserProfile = ({ navigation, route }) => {
             ToastAndroid.SHORT,
             ToastAndroid.TOP
         );
+    }
+
+    const getMe = async () => {
+        return JSON.parse(await AsyncStorage.getItem('user'));
     }
 
     const postCallback = (type, postid) => {
@@ -137,9 +168,9 @@ const UserProfile = ({ navigation, route }) => {
 
     const getUser = async () => {   
         setLoading(true);
-        const id = route.params.userId;
+        const userId = route.params.userId;
         const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send('GET', `user/${id}`, null, token);
+        const data = await Http.send('GET', `user/${userId}`, null, token);
     
         if(!data) {
             Alert.alert('Fatal Error', 'No data from server...');
@@ -148,14 +179,8 @@ const UserProfile = ({ navigation, route }) => {
             switch(data.typeResponse) {
                 case 'Success':
                     toast(data.message);
-                    let userAux = data.body;  
-
-                    if (route.params.userId == 'me') {
-                        const img = JSON.parse(await AsyncStorage.getItem('user')).img;
-                        userAux = { ...userAux, img }
-                    }
                                           
-                    return test(userAux);
+                    return test(data.body);
 
                 case 'Fail':
                     data.body.errors.forEach(element => {
@@ -170,6 +195,52 @@ const UserProfile = ({ navigation, route }) => {
             }
         } 
     }
+
+    const updateUserJson = async (type, dataP) => {
+        setLoading(true);
+        const token = await AsyncStorage.getItem('token'); 
+        const data = await Http.send('PUT', `user/field/${type}`, { data: dataP }, token);
+    
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+            
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success':
+                    toast(data.message);
+                    break;
+
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+
+                    break;
+                    
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        }
+
+        setLoading(false);
+    }
+
+    const BottomSheetItemC = ({ item }) => ( 
+        <ListItem containerStyle={item.containerStyle} onPress={item.onPress}>
+            <ListItem.Content>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Icon
+                        name={item.icon}
+                        color={item.iconColor} 
+                        type='ionicon' 
+                        size={30}
+                    />
+                    <ListItem.Title style={item.style}>{item.tittle}</ListItem.Title>
+                </View>
+            </ListItem.Content>
+        </ListItem>
+    )
 
     const renderItemSkill = ({ item }) => ( 
         <View style={userDetailStyles.viewItem}> 
@@ -322,7 +393,7 @@ const UserProfile = ({ navigation, route }) => {
         console.log('hi qualifications');
     }
 
-    const handleAddPress = () => {
+    const handleAddPress = () => { 
         switch(modalList.tittle) {
             case 'Awards':
                 console.log('agregar Award');
@@ -333,7 +404,11 @@ const UserProfile = ({ navigation, route }) => {
                 break;
                 
             case 'Skills':
-                console.log('agregar skill');
+                setModal({ type: 'skill', flag: true, editFlag: false });
+                break;
+
+            case 'Interests':
+                setModal({ type: 'interest', flag: true, editFlag: false });
                 break;
 
             default:
@@ -342,29 +417,152 @@ const UserProfile = ({ navigation, route }) => {
         }
     }
 
+    const handleBottomSheetOptions = ( tittle, editFunction, deleteFunction) => {
+        return bottomSheetFlag.options.map(bso => { 
+            let aux = bso;
+
+            if(/Edit|Delete/.test(bso.tittle)) { 
+                if(/Edit/.test(aux.tittle)) { 
+                    aux.tittle = `Edit ${tittle}`;
+                    aux.onPress = editFunction;   
+                
+                } else { 
+                    aux.tittle = `Delete ${tittle}`; 
+                    aux.onPress = deleteFunction; 
+                }
+
+            } else {
+                aux.onPress= () => setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
+            }
+
+            return aux;
+        });
+    }
+
+    const onPressModal = () => {
+        if(userJson.description.length < 1) {
+            Alert.alert('Empty field', 'Fill all field pls');
+        
+        } else {
+            let data = [];
+
+            switch(modal.type) {
+                case 'skill':
+                    if(modal.editFlag) {
+                        data = user.skills.map(skill => {
+                            let skillAux = skill;
+                
+                            if(skill.description == userJson.ref) { 
+                                skillAux.description = userJson.description;
+                            }
+                
+                            return skillAux;
+                        });
+        
+                    } else {
+                        data = user.skills;
+                        data.unshift({ description: userJson.description });
+                    }
+
+                    setUser({ ...user, skills: data });
+                    updateUserJson('skill', data);
+                    break;
+
+                case 'interest': 
+                    if(modal.editFlag) {
+                        data = user.skills.map(skill => {
+                            let skillAux = skill;
+                
+                            if(skill.description == userJson.ref) { 
+                                skillAux.description = userJson.description;
+                            }
+                
+                            return skillAux;
+                        });
+        
+                    } else { 
+                        data = user.interest;
+                        data.unshift({ description: userJson.description });
+                    }
+
+                    setUser({ ...user, interest: data });
+                    updateUserJson('interest', data);
+                    break;
+            }
+
+            setModal({ ...modal, flag: false, editFlag: false });
+            setUserJson({ description: '' });
+        }
+    }
+
+    const deleteSkill = (skillObj) => {
+        const skills = user.skills.filter(i => i != skillObj);
+
+        setUser({ ...user, skills });
+        updateUserJson('skill', skills);
+    }
+
+    const deleteInterest = (Obj) => {
+        const interest = user.interest.filter(i => i != Obj);
+
+        setUser({ ...user, interest });
+        updateUserJson('interest', interest);
+    }
+
     const renderItemOptions = (item) => {
+        let bsoAux = BSO_BLANK;
+        
         switch(modalList.tittle) {
             case 'Awards':
-                console.log('opcion de Award');
+                console.log('opcion de Awards');    
                 break;
 
             case 'Idioms':
                 console.log('opcion de Idiom');
                 break;
 
-            case 'Skills':
-                console.log('opcion de skill');
+            case 'Skills': 
+                bsoAux = handleBottomSheetOptions(
+                    item.description,
+                    () => { 
+                        setUserJson({ ...item, ref: item.description }); 
+                        setModal({ type:'skill', flag: true, editFlag: true }); 
+                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false }); 
+                    },
+                    () => {
+                        deleteSkill(item);
+                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
+                    }
+                );
+                break;
+
+            case 'Interests': 
+                bsoAux = handleBottomSheetOptions(
+                    item.description,
+                    () => { 
+                        setUserJson({ ...item, ref: item.description }); 
+                        setModal({ type:'interest', flag: true, editFlag: true }); 
+                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false }); 
+                    },
+                    () => {
+                        deleteInterest(item);
+                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
+                    }
+                );
                 break;
                 
             default:
                 Alert.alert('tittle no match', `Error on renderItemOptions "${modalList.tittle}"`);
                 break;
-        }
+        } 
+        
+        setBottomSheetFlag({ options: bsoAux, flag: true });
     }
 
 
-    useEffect(() => {
-        getUser().then(res => { 
+    useEffect(() => { 
+        getMe().then(res => setMe(res));
+        getUser().then(res => {  
             setUser(res);
             setLoading(false); 
         }); 
@@ -375,7 +573,6 @@ const UserProfile = ({ navigation, route }) => {
             ...userAux, 
             experiences: EXPERIENCE_BASE,
             idioms: IDIOMS_BASE,
-            skills: SKILLS_BASE,
             awards: AWARDS_BASE,
             qualifications: QUALIFICATION_BASE,
             description: 'hi, i am a description. inserted with a function test...' 
@@ -384,13 +581,66 @@ const UserProfile = ({ navigation, route }) => {
     
     return (
         <View style={userDetailStyles.container}>
+            <Modal 
+                animationType="slide"
+                transparent
+                visible={modal.flag}
+                onRequestClose={() => setModal({ ...modal, flag: false })}
+                >
+                <View style={userDetailStyles.modal}>
+                    <View style={userDetailStyles.viewModal}>
+                        {
+                            (modal.type == 'skill' || modal.type == 'interest')
+                            ? <View style ={{ alignItems: 'center' }}> 
+                                <Text style={userDetailStyles.tittleItem}>
+                                    {modal.type}
+                                </Text>
+                                <TextInput
+                                    placeholder={`Write a ${modal.type}!`}  
+                                    onChangeText={description => setUserJson({ ...userJson, description })}
+                                    onSubmitEditing={onPressModal}
+                                    autoFocus
+                                    value={userJson.description}
+                                    style={userDetailStyles.input}
+                                />
+                                <TouchableOpacity 
+                                    onPress={onPressModal}
+                                    style={userDetailStyles.button}
+                                    >
+                                    {
+                                        (loading)
+                                        ? <ActivityIndicator size="small" color="#00ff00" />
+                                        : <Text style={{ color: "white", fontSize: 15, fontWeight: "bold" }}>
+                                            Finish and send
+                                        </Text>
+                                    }
+                                </TouchableOpacity>
+                            </View>
+                            : null
+                        }  
+                    </View>
+                </View>
+            </Modal>
+            <BottomSheet
+                isVisible={bottomSheetFlag.flag}
+                containerStyle={{ backgroundColor: 'rgba(0.5, 0.25, 0, 0.2)' }}
+                >
+                {
+                    bottomSheetFlag.options.map((item, index) => (
+                        <BottomSheetItemC
+                            key={index}
+                            item={item}
+                        /> 
+                    )) 
+                }
+            </BottomSheet>
             <ModalListC
                 tittle={modalList.tittle}
                 vissible={modalList.flag}
-                addAction={handleAddPress}
+                addPress={handleAddPress}
                 onCancel={() => setModalList({ ...modalList, flag: false })}
                 renderItem={
-                    (modalList.tittle == ('Skills' || 'Idioms' || 'Awards'))
+                    (modalList.tittle == 'Skills' || modalList.tittle == 'Interests')
                     ? renderItemSkill
                     : null
                 }
@@ -398,6 +648,8 @@ const UserProfile = ({ navigation, route }) => {
                 data={
                     (modalList.tittle == 'Skills')
                     ? user.skills
+                    : (modalList.tittle == 'Interests')
+                    ? user.interest
                     : (modalList.tittle == 'Awards')
                     ? user.awards
                     : (modalList.tittle == 'Idioms')
@@ -424,23 +676,51 @@ const UserProfile = ({ navigation, route }) => {
                                 size="xlarge" 
                             />
                         }
-                        <Text style={userDetailStyles.name}>
-                            {user.name} {user.lastName}
-                        </Text>
-                        <Text style={userDetailStyles.tittleItem}>
-                            {user.email}
-                        </Text>
-                        <Text style={userDetailStyles.tittleItem}>
-                            {user.country} - 10 connect
-                        </Text>
+                        <View style={userDetailStyles.viewRow}>
+                            <View>
+                                <Text style={userDetailStyles.name}>
+                                    {user.name} {user.lastName}
+                                </Text>
+                                <Text style={userDetailStyles.tittleItem}>
+                                    {user.email}
+                                </Text>
+                                <Text style={userDetailStyles.tittleItem}>
+                                    {user.country} - 10 connect
+                                </Text>
+                            </View>
+                            {
+                                (user.id != me.id)
+                                ? null
+                                : <Icon
+                                    onPress={() => console.log('gotoedit user')}
+                                    name='pencil'
+                                    color='gray'
+                                    type='ionicon' 
+                                    size={30}
+                                />
+                            }
+                        </View>
                     </View>
                     {
                         (user.description == null)
                         ? null
                         : <View style={[ userDetailStyles.viewList, userDetailStyles.viewLinesItem ]}>
-                            <Text style={userDetailStyles.tittleItem}>
-                                Description
-                            </Text>
+                            <View style={userDetailStyles.viewRow}>
+                                <Text style={userDetailStyles.tittleItem}>
+                                    Description
+                                </Text>
+                                {
+                                    (user.id != me.id)
+                                    ? null
+                                    : <Icon
+                                        onPress={() => console.log('gotoedit user')}
+                                        name='pencil'
+                                        color='gray'
+                                        type='ionicon' 
+                                        size={30}
+                                    />
+                                }
+                            </View>
                             <Text style={userDetailStyles.text}>
                                 {user.description}
                             </Text>
@@ -572,8 +852,20 @@ const UserProfile = ({ navigation, route }) => {
                             />
                         </View>
                     }
-                    {
-                        (user.skills == null)
+                    { 
+                        (user.id == me.id && user.skills.length < 1)
+                        ? <View style={userDetailStyles.viewList}>
+                            <Text style={userDetailStyles.tittleList}>
+                                Skills
+                            </Text>
+                            <ListItem>
+                                <ListItemC
+                                    action={() => setModalList({ tittle: 'Skills', flag: true })}
+                                    tittle='No have skill? Write one!'
+                                />
+                            </ListItem>
+                        </View>
+                        : (user.skills.length < 1)
                         ? null
                         : <View style={userDetailStyles.viewList}>
                             <Text style={userDetailStyles.tittleList}>
@@ -583,6 +875,7 @@ const UserProfile = ({ navigation, route }) => {
                                 user.skills.map((item, index) => (
                                     <ListItem key={index} bottomDivider>
                                         <ListItemC
+                                            action={()=> setModalList({ tittle: 'Skills', flag: true })}
                                             tittle={item.description}
                                         />
                                     </ListItem>
@@ -592,7 +885,41 @@ const UserProfile = ({ navigation, route }) => {
                                 action={()=> setModalList({ tittle: 'Skills', flag: true })}
                             />
                         </View>
-                    }
+                        }
+                        { 
+                        (user.id == me.id && user.interest.length < 1)
+                        ? <View style={userDetailStyles.viewList}>
+                            <Text style={userDetailStyles.tittleList}>
+                                Interests
+                            </Text>
+                            <ListItem>
+                                <ListItemC
+                                    action={() => setModalList({ tittle: 'Interests', flag: true })}
+                                    tittle='No have interest? Write one!'
+                                />
+                            </ListItem>
+                        </View>
+                        : (user.interest.length < 1)
+                        ? null
+                        : <View style={userDetailStyles.viewList}>
+                            <Text style={userDetailStyles.tittleList}>
+                                Interests
+                            </Text>
+                            {
+                                user.interest.map((item, index) => (
+                                    <ListItem key={index} bottomDivider>
+                                        <ListItemC
+                                            action={()=> setModalList({ tittle: 'Interests', flag: true })}
+                                            tittle={item.description}
+                                        />
+                                    </ListItem>
+                                ))
+                            }
+                            <SeeMoreButtonC
+                                action={()=> setModalList({ tittle: 'Interests', flag: true })}
+                            />
+                        </View>
+                        }
                 </ScrollView>
             }          
         </View> 
@@ -671,6 +998,42 @@ const userDetailStyles = StyleSheet.create({
         padding: 10,
         width: '100%',
         backgroundColor: '#f4f6fc',
+    },
+
+    modal: {  
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+
+    input: {
+        borderRadius: 5, 
+        backgroundColor: 'lightgray', 
+        padding: 5, 
+        width:'100%',
+        marginVertical: '3%'
+    },
+
+    button: { 
+        width: "100%",
+        height: 40,
+        backgroundColor: "#3465d9",
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 5, 
+    },
+
+    viewModal: {
+        margin: '5%',
+        backgroundColor: "white",
+        borderRadius: 10,
+        padding: '5%',
+        width: '50%',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5
     },
 
     item: {
