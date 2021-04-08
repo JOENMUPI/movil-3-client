@@ -189,6 +189,34 @@ const SeePost = ({ navigation, route }) => {
         setPost({ ...post, reactions: reactionsAux });
     }
 
+    const handleCommentReaction = (reactionId, comment) => { 
+        const reactionsAux = comment.reactions.map(reaction => { 
+            let aux = reaction;
+            
+            if(reaction.id ==  reactionId) {   
+                aux.me = !reaction.me;
+                (aux.me)  
+                ? aux = { ...aux, num: aux.num + 1 }
+                : aux = { ...aux, num: aux.num - 1 }
+
+                //sendReaction(aux); aqui va uno en direccion a comentarioo
+            }
+                
+            return aux;
+        });
+
+        const commentariesAux = commentaries.data.map(item => {
+            if(item.id == comment.id) {
+                return { ...comment, reactions: reactionsAux }
+            }
+
+            return item;
+        });
+
+        setModal(false);
+        setCommentaries(commentariesAux);
+    }
+
     const deletePost = async () => {      
         const token = await AsyncStorage.getItem('token'); 
         const data = await Http.send('DELETE', `post/${post.id}`, null, token);
@@ -415,24 +443,8 @@ const SeePost = ({ navigation, route }) => {
                 visible={modal}
                 onRequestClose={() => setModal(false)}
                 >
-                <View style={{
-                        flex: 1,
-                        justifyContent: "center",
-                        alignItems: "center",
-                    }} 
-                    >
-                    <View style={{
-                        margin: '10%',
-                        backgroundColor: "white",
-                        borderRadius: 10,
-                        padding: '10%',
-                        shadowColor: "#000",
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.25,
-                        shadowRadius: 4,
-                        elevation: 5
-                    }}
-                    >
+                <View style={seePostStyles.constainerModal}>
+                    <View style={seePostStyles.modal}>
                         <Text style={[ seePostStyles.tittleText, { color: 'gray' } ]}>
                             Select a icon!
                         </Text>
@@ -483,13 +495,13 @@ const SeePost = ({ navigation, route }) => {
                                 size="medium"
                                 containerStyle={{ backgroundColor: 'lightgray' }}
                                 icon={CAMERA_ICON} 
-                                onPress={() => navigation.navigate('UserProfile')}
+                                onPress={() => navigation.navigate('UserProfile', { userId: user.id })}
                             />
                             : <Avatar 
                                 rounded 
                                 size="medium" 
                                 source={{ uri: `data:image/png;base64,${user.img}` }}
-                                onPress={() => navigation.navigate('UserProfile')}
+                                onPress={() => navigation.navigate('UserProfile', { userId: user.id } )}
                             />
                         }
                         <View>
@@ -581,22 +593,20 @@ const SeePost = ({ navigation, route }) => {
                                 (!post)
                                 ? null
                                 : post.reactions.map((item, index) => (
-
                                     !(item.num > 0)
                                     ? null
-                                    : 
-                                    <TouchableOpacity 
+                                    : <TouchableOpacity 
                                         onPress={() => handleReaction(item.id)}
                                         style={[seePostStyles.viewRow, { marginLeft: 10 }]}
                                         key={index}
                                         >
                                         <Icon
                                             name={item.description} 
-                                            color='gray' 
+                                            color={ (item.me) ? '#3465d9' : 'gray' } 
                                             type='ionicon' 
                                             size={15}
                                         />
-                                        <Text>
+                                        <Text style={ (item.me) ? { color: '#3465d9' } : { color: 'gray' } }>
                                             {item.num}
                                         </Text>
                                     </TouchableOpacity>
@@ -641,13 +651,24 @@ const SeePost = ({ navigation, route }) => {
                                 commentaries.data.map((item, index) => ( 
                                     <View
                                         key={index} 
-                                        style={[seePostStyles.viewRow, { marginVertical: '2%' }]}>
-                                        <Avatar 
-                                            rounded 
-                                            size="medium" 
-                                            source={{ uri: `data:image/png;base64,${item.img}` }}
-                                            onPress={() => navigation.navigate('UserProfile', item.userId)}
-                                        />
+                                        style={[seePostStyles.viewRow, { marginVertical: '2%' }]}
+                                        >
+                                        {
+                                            (item.img == null)
+                                            ? <Avatar 
+                                                rounded
+                                                size="medium"
+                                                containerStyle={{ backgroundColor: 'lightgray' }}
+                                                icon={CAMERA_ICON} 
+                                                onPress={() => navigation.navigate('UserProfile', { userId: item.userId })}
+                                            />
+                                            : <Avatar 
+                                                rounded 
+                                                size="medium" 
+                                                source={{ uri: `data:image/png;base64,${item.img}` }}
+                                                onPress={() => navigation.navigate('UserProfile', { userId: item.userId })}
+                                            />
+                                        }
                                         <View>
                                             <View 
                                                 style={{
@@ -719,36 +740,27 @@ const SeePost = ({ navigation, route }) => {
                                                             size={20}
                                                         />
                                                     </View>
-                                                    <TouchableOpacity
-                                                        onPress={() => console.log('agregar reaccion')}
-                                                        style={seePostStyles.viewRow}
-                                                        >
-                                                        <Icon
-                                                            style={{ paddingHorizontal: '3%' }}
-                                                            name='flame-outline' 
-                                                            color='gray' 
-                                                            type='ionicon' 
-                                                            size={15}
-                                                        />
-                                                        <Text>
-                                                            10
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity
-                                                        onPress={() => console.log('agregar reaccion')}
-                                                        style={seePostStyles.viewRow}
-                                                        >
-                                                        <Icon
-                                                            style={{ paddingHorizontal: '3%' }}
-                                                            name='heart-outline' 
-                                                            color='gray' 
-                                                            type='ionicon' 
-                                                            size={15}
-                                                        />
-                                                        <Text>
-                                                            7
-                                                        </Text>
-                                                    </TouchableOpacity>
+                                                    {
+                                                        item.reactions.map((rea, index) => (
+                                                            !(rea.num > 0)
+                                                            ? null
+                                                            : <TouchableOpacity 
+                                                                onPress={() => handleReaction(rea.id)}
+                                                                style={[seePostStyles.viewRow, { marginLeft: 10 }]}
+                                                                key={index}
+                                                                >
+                                                                <Icon
+                                                                    name={rea.description} 
+                                                                    color={ (item.me) ? '#3465d9' : 'gray' } 
+                                                                    type='ionicon' 
+                                                                    size={15}
+                                                                />
+                                                                <Text style={ (rea.me) ? { color: '#3465d9' } : { color: 'gray' } }>
+                                                                    {rea.num}
+                                                                </Text>
+                                                            </TouchableOpacity>
+                                                        )) 
+                                                    }
                                                 </View>
                                             </View>    
                                         </View>
@@ -915,5 +927,23 @@ const seePostStyles = StyleSheet.create({
     text: {
         paddingLeft: 5, 
         color: 'gray' 
+    },
+
+    constainerModal: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+
+    modal: {
+        margin: '10%',
+        backgroundColor: "white",
+        borderRadius: 10,
+        padding: '10%',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5
     }
 });

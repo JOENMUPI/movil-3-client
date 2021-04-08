@@ -610,7 +610,7 @@ const UserProfile = ({ navigation, route }) => {
                                     {
                                         (loading)
                                         ? <ActivityIndicator size="small" color="#00ff00" />
-                                        : <Text style={{ color: "white", fontSize: 15, fontWeight: "bold" }}>
+                                        : <Text style={userDetailStyles.buttonText}>
                                             Finish and send
                                         </Text>
                                     }
@@ -661,7 +661,7 @@ const UserProfile = ({ navigation, route }) => {
                 (loading)
                 ? <ActivityIndicator size="large" color="#00ff00" />
                 : <ScrollView style={userDetailStyles.fill}>
-                    <View style={userDetailStyles.viewLinesItem}>
+                    <View style={[ userDetailStyles.viewLinesItem, { paddingTop: '2%' } ]}>
                         {
                             (user.img == null)
                             ? <Avatar 
@@ -676,7 +676,7 @@ const UserProfile = ({ navigation, route }) => {
                                 size="xlarge" 
                             />
                         }
-                        <View style={userDetailStyles.viewRow}>
+                        <View style={[ userDetailStyles.viewRow, userDetailStyles.viewEditIcon ]}>
                             <View>
                                 <Text style={userDetailStyles.name}>
                                     {user.name} {user.lastName}
@@ -705,7 +705,7 @@ const UserProfile = ({ navigation, route }) => {
                         (user.description == null)
                         ? null
                         : <View style={[ userDetailStyles.viewList, userDetailStyles.viewLinesItem ]}>
-                            <View style={userDetailStyles.viewRow}>
+                            <View style={[ userDetailStyles.viewRow, userDetailStyles.viewEditIcon ]}>
                                 <Text style={userDetailStyles.tittleItem}>
                                     Description
                                 </Text>
@@ -985,6 +985,11 @@ const userDetailStyles = StyleSheet.create({
         alignItems: 'center' 
     },
 
+    viewEditIcon: {
+        justifyContent: 'space-between', 
+        paddingRight: '3%' 
+    },
+
     viewReaction: {
         flexDirection: 'row', 
         paddingRight: 5
@@ -1021,6 +1026,12 @@ const userDetailStyles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         borderRadius: 5, 
+    },
+
+    buttonText: {
+        color: "white", 
+        fontSize: 15, 
+        fontWeight: "bold" 
     },
 
     viewModal: {

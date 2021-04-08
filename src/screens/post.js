@@ -218,7 +218,6 @@ const Home = ({ navigation, route }) => {
                         }
                     </Text>
                 </TouchableOpacity>
-
             </View>
             <View style={postStyles.body}>
                 {
