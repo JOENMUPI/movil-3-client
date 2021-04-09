@@ -7,12 +7,15 @@ import userDetails from './src/Screen/userDetails';
 import EditProfile from './src/Screen/EditProfile';
 import skills from './src/Screen/skills';
 import education from './src/Screen/education';
+import Share from './src/Screen/Share';
+
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
+            <Stack.Screen name="Share" component={Share} options={{ title: "Share", headerShown: false }}></Stack.Screen>
            <Stack.Screen name="education" component={education} options={{ title: "education", headerShown: false }}></Stack.Screen>
           <Stack.Screen name="skills" component={skills} options={{ title: "skills", headerShown: false }}></Stack.Screen>
          <Stack.Screen name="EditProfile" component={EditProfile} options={{ title: "EditProfile", headerShown: false }}></Stack.Screen>
