@@ -29,7 +29,12 @@ const NEW_COMMENT_BLANK = {
     type: ''
 }
 
-const SeePost = ({ navigation, route }) => {  
+const MODAL_BLANK = { 
+    flag: false, 
+    commentFlag: false 
+}
+
+const SeePost = ({ navigation, route }) => {   console.log('___reactions___', route.params.post.reactions);
     const [meId, setMeId] = useState(0);
     const [user, setUser] = useState(route.params.user);
     const [post, setPost] = useState(route.params.post);
@@ -37,7 +42,7 @@ const SeePost = ({ navigation, route }) => {
     const [newComment, setNewComment] = useState(NEW_COMMENT_BLANK);
     const [commentaries, setCommentaries] = useState({ flag: false, data: [] });
     const [bottomSheetFlag, setBottomSheetFlag] = useState({ type: '', flag: false });
-    const [modal, setModal] = useState(false); 
+    const [modal, setModal] = useState(MODAL_BLANK); 
 
     let commentInput = '';
 
@@ -55,13 +60,6 @@ const SeePost = ({ navigation, route }) => {
             style: { paddingLeft: 5, color: 'gray' },
             iconColor: 'gray',
             onPress: () => deletePostAlert() 
-        },
-        { 
-            tittle: 'Add reaction',
-            icon: 'heart-outline',
-            style: { paddingLeft: 5, color: 'gray' },
-            iconColor: 'gray',
-            onPress: () => console.log('add reaction') 
         },
         {
             tittle: 'Cancel',
@@ -87,13 +85,6 @@ const SeePost = ({ navigation, route }) => {
             style: { paddingLeft: 5, color: 'gray' },
             iconColor: 'gray',
             onPress: () => deleteCommentAlert()
-        },
-        { 
-            tittle: 'Add reaction',
-            icon: 'heart-outline',
-            style: { paddingLeft: 5, color: 'gray' },
-            iconColor: 'gray',
-            onPress: () => console.log('add reaction') 
         },
         {
             tittle: 'Cancel',
@@ -179,17 +170,17 @@ const SeePost = ({ navigation, route }) => {
                 ? aux = { ...aux, num: aux.num + 1 }
                 : aux = { ...aux, num: aux.num - 1 }
 
-                sendReaction(aux);
+                sendReaction(aux, 'post', null);
             }
                 
             return aux;
         });
 
-        setModal(false);
+        setModal(MODAL_BLANK);
         setPost({ ...post, reactions: reactionsAux });
     }
 
-    const handleCommentReaction = (reactionId, comment) => { 
+    const handleCommentReaction = (reactionId, comment) => {  
         const reactionsAux = comment.reactions.map(reaction => { 
             let aux = reaction;
             
@@ -199,22 +190,33 @@ const SeePost = ({ navigation, route }) => {
                 ? aux = { ...aux, num: aux.num + 1 }
                 : aux = { ...aux, num: aux.num - 1 }
 
-                //sendReaction(aux); aqui va uno en direccion a comentarioo
+                sendReaction(aux, 'comment', comment); 
             }
                 
             return aux;
         });
 
         const commentariesAux = commentaries.data.map(item => {
-            if(item.id == comment.id) {
+            if(item.id == comment.id) { 
                 return { ...comment, reactions: reactionsAux }
             }
 
             return item;
         });
 
-        setModal(false);
-        setCommentaries(commentariesAux);
+        setModal(MODAL_BLANK);
+        setCommentaries({ ...commentaries, data: commentariesAux});
+    }
+
+    const pressIconModal = (item) => {
+        (modal.commentFlag)
+        ? handleCommentReaction(item.id, commentaryFocus)
+        : handleReaction(item.id);
+    }
+
+    const pressAddIconComment = (item) => {
+        setCommentaryFocus(item);
+        setModal({ flag: true, commentFlag: true });
     }
 
     const deletePost = async () => {      
@@ -291,9 +293,17 @@ const SeePost = ({ navigation, route }) => {
             switch(data.typeResponse) {
                 case 'Success': 
                     toast(data.message); 
+                    const  me = JSON.parse(await AsyncStorage.getItem('user'));
                     let commentariesAux = commentaries.data;
                     
-                    commentariesAux.unshift(data.body); 
+                    commentariesAux.unshift({ 
+                        ...data.body, 
+                        userId: me.id, 
+                        name: me.name,
+                        lastName: me.lastName,
+                        img: me.img
+                    }); 
+
                     setPost({ ... post, commentaries: commentariesAux.length });
                     setCommentaries({ ...commentaries, data: commentariesAux });
                     break;
@@ -343,13 +353,20 @@ const SeePost = ({ navigation, route }) => {
         }
     }
 
-    const sendReaction = async (reaction) => { 
+    const sendReaction = async (reaction, type, comment) => { 
         const token = await AsyncStorage.getItem('token'); 
         let data; 
 
-        (reaction.me)
-        ? data = await Http.send('POST', 'reaction/post', { postId: post.id, reactionId: reaction.id }, token)
-        : data = await Http.send('DELETE', `reaction/post/${post.id}/${reaction.id}`, null, token);
+        if(type == 'post') {
+            (reaction.me)
+            ? data = await Http.send('POST', 'reaction/post', { postId: post.id, reactionId: reaction.id }, token)
+            : data = await Http.send('DELETE', `reaction/post/${post.id}/${reaction.id}`, null, token);
+        
+        } else {
+            (reaction.me)
+            ? data = await Http.send('POST', 'reaction/comment', { commentId: comment.id, reactionId: reaction.id }, token)
+            : data = await Http.send('DELETE', `reaction/comment/${comment.id}/${reaction.id}`, null, token);
+        }
 
         if(!data) {
             Alert.alert('Fatal Error', 'No data from server...');
@@ -440,8 +457,8 @@ const SeePost = ({ navigation, route }) => {
             <Modal
                 animationType="slide"
                 transparent
-                visible={modal}
-                onRequestClose={() => setModal(false)}
+                visible={modal.flag}
+                onRequestClose={() => setModal(MODAL_BLANK)}
                 >
                 <View style={seePostStyles.constainerModal}>
                     <View style={seePostStyles.modal}>
@@ -452,7 +469,7 @@ const SeePost = ({ navigation, route }) => {
                             {
                                 post.reactions.map((item, index) => (        
                                     <Icon
-                                        onPress={() => handleReaction(item.id)}
+                                        onPress={() => pressIconModal(item)}
                                         key={index}
                                         name={item.description}
                                         color='gray' 
@@ -582,7 +599,7 @@ const SeePost = ({ navigation, route }) => {
                         <View style={seePostStyles.viewRow}>
                             <View style={seePostStyles.addIconView}>
                                 <Icon
-                                    onPress={() => setModal(true)}
+                                    onPress={() => setModal({ flag: true, commentFlag: false })}
                                     name='add-outline' 
                                     color='gray' 
                                     type='ionicon' 
@@ -683,7 +700,7 @@ const SeePost = ({ navigation, route }) => {
                                                         {item.name} {item.lastName}
                                                     </Text>
                                                     {
-                                                        (meId == user.id)
+                                                        (meId == item.userId)
                                                         ? <Icon
                                                             onPress={() => handleOptionComment(item)}
                                                             name='ellipsis-vertical' 
@@ -733,25 +750,25 @@ const SeePost = ({ navigation, route }) => {
                                                 <View style={seePostStyles.viewRow}>
                                                     <View style={seePostStyles.addIconView}>
                                                         <Icon
-                                                            onPress={() => console.log('nueva reacccion')}
+                                                            onPress={() => pressAddIconComment(item)}
                                                             name='add-outline' 
                                                             color='gray' 
                                                             type='ionicon' 
                                                             size={20}
                                                         />
-                                                    </View>
+                                                    </View> 
                                                     {
                                                         item.reactions.map((rea, index) => (
                                                             !(rea.num > 0)
                                                             ? null
                                                             : <TouchableOpacity 
-                                                                onPress={() => handleReaction(rea.id)}
+                                                                onPress={() => handleCommentReaction(rea.id, item)}
                                                                 style={[seePostStyles.viewRow, { marginLeft: 10 }]}
                                                                 key={index}
                                                                 >
                                                                 <Icon
                                                                     name={rea.description} 
-                                                                    color={ (item.me) ? '#3465d9' : 'gray' } 
+                                                                    color={ (rea.me) ? '#3465d9' : 'gray' } 
                                                                     type='ionicon' 
                                                                     size={15}
                                                                 />

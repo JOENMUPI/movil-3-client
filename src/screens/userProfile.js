@@ -689,8 +689,18 @@ const UserProfile = ({ navigation, route }) => {
                                 </Text>
                             </View>
                             {
-                                (user.id != me.id)
+                                (user.connect)
                                 ? null
+                                :
+                                (user.id != me.id)
+                                ? <TouchableOpacity
+                                    onPress={() => toast('peticion enviada')} 
+                                    style={{ padding: '3%', borderWidth: 1, borderColor: 'gray', borderRadius: 10 }}
+                                    >
+                                    <Text style={{ color: 'gray', fontWeight: 'bold' }}>
+                                        Connect
+                                    </Text>
+                                </TouchableOpacity>
                                 : <Icon
                                     onPress={() => console.log('gotoedit user')}
                                     name='pencil'
@@ -887,38 +897,38 @@ const UserProfile = ({ navigation, route }) => {
                         </View>
                         }
                         { 
-                        (user.id == me.id && user.interest.length < 1)
-                        ? <View style={userDetailStyles.viewList}>
-                            <Text style={userDetailStyles.tittleList}>
-                                Interests
-                            </Text>
-                            <ListItem>
-                                <ListItemC
-                                    action={() => setModalList({ tittle: 'Interests', flag: true })}
-                                    tittle='No have interest? Write one!'
+                            (user.id == me.id && user.interest.length < 1)
+                            ? <View style={userDetailStyles.viewList}>
+                                <Text style={userDetailStyles.tittleList}>
+                                    Interests
+                                </Text>
+                                <ListItem>
+                                    <ListItemC
+                                        action={() => setModalList({ tittle: 'Interests', flag: true })}
+                                        tittle='No have interest? Write one!'
+                                    />
+                                </ListItem>
+                            </View>
+                            : (user.interest.length < 1)
+                            ? null
+                            : <View style={userDetailStyles.viewList}>
+                                <Text style={userDetailStyles.tittleList}>
+                                    Interests
+                                </Text>
+                                {
+                                    user.interest.map((item, index) => (
+                                        <ListItem key={index} bottomDivider>
+                                            <ListItemC
+                                                action={()=> setModalList({ tittle: 'Interests', flag: true })}
+                                                tittle={item.description}
+                                            />
+                                        </ListItem>
+                                    ))
+                                }
+                                <SeeMoreButtonC
+                                    action={()=> setModalList({ tittle: 'Interests', flag: true })}
                                 />
-                            </ListItem>
-                        </View>
-                        : (user.interest.length < 1)
-                        ? null
-                        : <View style={userDetailStyles.viewList}>
-                            <Text style={userDetailStyles.tittleList}>
-                                Interests
-                            </Text>
-                            {
-                                user.interest.map((item, index) => (
-                                    <ListItem key={index} bottomDivider>
-                                        <ListItemC
-                                            action={()=> setModalList({ tittle: 'Interests', flag: true })}
-                                            tittle={item.description}
-                                        />
-                                    </ListItem>
-                                ))
-                            }
-                            <SeeMoreButtonC
-                                action={()=> setModalList({ tittle: 'Interests', flag: true })}
-                            />
-                        </View>
+                            </View>
                         }
                 </ScrollView>
             }          
