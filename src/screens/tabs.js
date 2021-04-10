@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Icon } from 'react-native-elements';
 import Home from './home';
 import Post from './post';
+import Connect from './connect';
 
 
 const Tab = createBottomTabNavigator();
@@ -27,6 +28,11 @@ const SCREEN_OPTIONS = ({ route }) => ({
                 ? iconName = 'duplicate'
                 : iconName = 'duplicate-outline';
                 break;
+            case 'Connect':
+                (focused)
+                ? iconName = 'people-circle'
+                : iconName = 'people-circle-outline';
+                break;
         }
         
         return (
@@ -48,6 +54,7 @@ export default function App() {
             tabBarOptions={OPTION}
             >
             <Tab.Screen name="Home" component={Home}/>
+            <Tab.Screen name="Connect" component={Connect}/>
             <Tab.Screen name="Post" component={Post}/>
         </Tab.Navigator>
     );

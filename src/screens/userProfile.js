@@ -196,6 +196,33 @@ const UserProfile = ({ navigation, route }) => {
         } 
     }
 
+    const sendConnect = async () => {   
+        const token = await AsyncStorage.getItem('token'); 
+        const data = await Http.send('Post', 'connect', { userObjId: user.id }, token);
+    
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+            
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success':
+                    toast(data.message);
+                    setUser({ ...user, myConnect: true });                 
+                    break;
+
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+                    
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        } 
+    }
+
     const updateUserJson = async (type, dataP) => {
         setLoading(true);
         const token = await AsyncStorage.getItem('token'); 
@@ -257,7 +284,7 @@ const UserProfile = ({ navigation, route }) => {
                 />
             </View>
         </View>
-      )
+    )
 
     const ListItemWithImgC = ({ img, tittle, line2, line3, onPress }) => ( 
         <View style={userDetailStyles.viewRow}> 
@@ -662,7 +689,7 @@ const UserProfile = ({ navigation, route }) => {
                 ? <ActivityIndicator size="large" color="#00ff00" />
                 : <ScrollView style={userDetailStyles.fill}>
                     <View style={[ userDetailStyles.viewLinesItem, { paddingTop: '2%' } ]}>
-                        {
+                        { 
                             (user.img == null)
                             ? <Avatar 
                                 rounded
@@ -685,17 +712,18 @@ const UserProfile = ({ navigation, route }) => {
                                     {user.email}
                                 </Text>
                                 <Text style={userDetailStyles.tittleItem}>
-                                    {user.country} - 10 connect
+                                    {user.country} - {user.connectNum} Connects
                                 </Text>
                             </View>
                             {
                                 (user.connect)
                                 ? null
-                                :
-                                (user.id != me.id)
-                                ? <TouchableOpacity
-                                    onPress={() => toast('peticion enviada')} 
-                                    style={{ padding: '3%', borderWidth: 1, borderColor: 'gray', borderRadius: 10 }}
+                                : (user.id != me.id)
+                                ? (user.myConnect)
+                                ? null
+                                : <TouchableOpacity
+                                    onPress={sendConnect} 
+                                    style={userDetailStyles.buttonConnect}
                                     >
                                     <Text style={{ color: 'gray', fontWeight: 'bold' }}>
                                         Connect
@@ -1036,6 +1064,13 @@ const userDetailStyles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         borderRadius: 5, 
+    },
+
+    buttonConnect: { 
+        padding: '3%', 
+        borderWidth: 1, 
+        borderColor: 'gray', 
+        borderRadius: 10 
     },
 
     buttonText: {
