@@ -6,7 +6,8 @@ import {
     ScrollView,
     ToastAndroid,
     StyleSheet,
-    Alert
+    Alert,
+    ActivityIndicator
 } from "react-native";
 import { Avatar, Icon, ListItem } from 'react-native-elements';
 import AsyncStorage from '@react-native-community/async-storage';
@@ -17,6 +18,7 @@ import ModalListC from '../components/modalList';
 const Connect = ({ navigation, route }) => {
     const [connect, setConnect] = useState({ petitions: [], connect: [] });
     const [modalList, setModalList] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const toast = (message) => { 
         ToastAndroid.showWithGravity(
@@ -38,6 +40,7 @@ const Connect = ({ navigation, route }) => {
     }
 
     const getConnects = async () => {   
+        setLoading(true)
         const token = await AsyncStorage.getItem('token'); 
         const me = JSON.parse(await AsyncStorage.getItem('user'));
         const data = await Http.send('GET', 'connect', null, token);
@@ -195,7 +198,10 @@ const Connect = ({ navigation, route }) => {
     )
 
     useEffect(() => { 
-        getConnects().then(res => setConnect(res));
+        getConnects().then(res => {
+            setConnect(res);
+            setLoading(false);
+        });
     }, []);
 
     return (
@@ -218,12 +224,28 @@ const Connect = ({ navigation, route }) => {
                     tittle='contact (working...)'
                 />
                 <View style={styles.viewList}>
-                    <Text style={[styles.tittleList]}>
-                        request connect
-                    </Text>
+                    <View style={[ styles.viewRow, { justifyContent: 'space-between', paddingEnd: '3%' }]}>
+                        <Text style={[styles.tittleList]}>
+                            request connect
+                        </Text>
+                        <Icon
+                            onPress={() => 
+                                getConnects().then(res => {
+                                    setConnect(res);
+                                    setLoading(false);
+                                })
+                            }
+                            name='refresh-outline'
+                            color='gray' 
+                            type='ionicon' 
+                            size={20}
+                        />
+                    </View>
                     {
-                        (connect.petitions.length < 1)
-                        ?<View style={styles.modal}>
+                        (loading)
+                        ? <ActivityIndicator size="large" color="#00ff00" />
+                        : (connect.petitions.length < 1)
+                        ? <View style={styles.modal}>
                             <Text style={styles.tittle}>
                                 No pending requests
                             </Text>
