@@ -11,6 +11,7 @@ import UserProfile from './src/screens/userProfile';
 import Post from './src/screens/post';
 import SeePost from './src/screens/seePost';
 import Connect from './src/screens/connect';
+import EditUser from './src/screens/editUser';
 
 const Stack = createStackNavigator();
 
@@ -21,6 +22,7 @@ export default function App() {
         <Stack.Screen name="Test" component={Test} options={{ title: "Test", headerShown: false }}></Stack.Screen> 
         <Stack.Screen name="Post" component={Post} options={{ title: "Post", headerShown: false }}></Stack.Screen> 
         <Stack.Screen name="Connect" component={Connect} options={{ title: "Connect", headerShown: false }}></Stack.Screen> 
+        <Stack.Screen name="EditUser" component={EditUser} options={{ title: "EditUser", headerShown: false }}></Stack.Screen> 
         <Stack.Screen name="SeePost" component={SeePost} options={{ title: "See Post", headerShown: false }}></Stack.Screen> 
         <Stack.Screen name="UserProfile" component={UserProfile} options={{ title: "User Profile", headerShown: false }}></Stack.Screen>   
         <Stack.Screen name="Tabs" component={Tabs} options={{ title: "Tabs", headerShown: false }}></Stack.Screen> 

@@ -586,6 +586,10 @@ const UserProfile = ({ navigation, route }) => {
         setBottomSheetFlag({ options: bsoAux, flag: true });
     }
 
+    const callBack = (newUser) => {
+        setUser(newUser);
+    }
+
 
     useEffect(() => { 
         getMe().then(res => setMe(res));
@@ -601,8 +605,7 @@ const UserProfile = ({ navigation, route }) => {
             experiences: EXPERIENCE_BASE,
             idioms: IDIOMS_BASE,
             awards: AWARDS_BASE,
-            qualifications: QUALIFICATION_BASE,
-            description: 'hi, i am a description. inserted with a function test...' 
+            qualifications: QUALIFICATION_BASE
         }; 
     }
     
@@ -730,7 +733,8 @@ const UserProfile = ({ navigation, route }) => {
                                     </Text>
                                 </TouchableOpacity>
                                 : <Icon
-                                    onPress={() => console.log('gotoedit user')}
+                                    containerStyle={{ paddingRight: '5%' }}
+                                    onPress={() => navigation.navigate('EditUser', { user: user, callback: callBack.bind(this) })}
                                     name='pencil'
                                     color='gray'
                                     type='ionicon' 
@@ -747,17 +751,6 @@ const UserProfile = ({ navigation, route }) => {
                                 <Text style={userDetailStyles.tittleItem}>
                                     Description
                                 </Text>
-                                {
-                                    (user.id != me.id)
-                                    ? null
-                                    : <Icon
-                                        onPress={() => console.log('gotoedit user')}
-                                        name='pencil'
-                                        color='gray'
-                                        type='ionicon' 
-                                        size={30}
-                                    />
-                                }
                             </View>
                             <Text style={userDetailStyles.text}>
                                 {user.description}

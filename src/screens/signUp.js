@@ -69,34 +69,6 @@ const SignUp = ({ navigation }) => {
         setUser({ ...user, img });
     }
 
-    const checkPass = () => {
-        let capitalLetter = false;
-        let lowercaseLetter = false;
-        let number = false;
-        let specialLetter = false;
-        
-        if(user.password.length >= 8) {		
-            for(let i = 0; i < user.password.length; i++) { 
-                if(user.password.charCodeAt(i) > 64 && user.password.charCodeAt(i) < 91) {
-                    capitalLetter = true;
-                
-                } else if(user.password.charCodeAt(i) > 96 && user.password.charCodeAt(i) < 123) {
-                    lowercaseLetter = true;
-                
-                } else if(user.password.charCodeAt(i) > 47 && user.password.charCodeAt(i) < 58) {
-                    number = true;
-                
-                } else {
-                    specialLetter = true;
-                }
-            } 
-        }
-
-        (capitalLetter && lowercaseLetter && specialLetter && number) 
-        ? setStep(step + 1)
-        : Alert.alert('Hey!', 'Password does not meet requirements');
-    }
-
     const handleButton = async () => {
         switch(step) {
             case 1:
@@ -108,7 +80,9 @@ const SignUp = ({ navigation }) => {
             case 2:
                 (!Field.checkFields([ user.password ])) 
                 ? Alert.alert('Error on password', 'Please, check your password.')
-                : checkPass();
+                : (Field.checkPass(user.password)) 
+                ? setStep(step + 1)
+                : Alert.alert('Hey!', 'Password does not meet requirements');
                 break;
             
             case 3:
