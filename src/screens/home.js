@@ -281,12 +281,16 @@ const Home = ({ navigation, route }) => {
         </View>
     ) 
 
-    useEffect(() => {  
-        getMe().then(res => setMe(res)); 
+    const refresh =() => {
         getPost().then(res => { 
             setPosts(res);
             setLoading(false);
         });
+    }
+
+    useEffect(() => {  
+        getMe().then(res => setMe(res)); 
+        refresh();
     }, []);
 
     return (
@@ -317,19 +321,30 @@ const Home = ({ navigation, route }) => {
                     </Text>
                     <Icon name='search-outline' color='gray' type='ionicon' size={20}/>
                 </TouchableOpacity>
-                <TouchableWithoutFeedback onPress={() => setEnterprise(!enterprise)} >
-                    <View style={homeStyles.viewRow}>
-                        <Text style={homeStyles.text}>
-                            Mode enterprise: 
-                        </Text>
-                        <Switch
-                            thumbColor={enterprise ? "darkcyan" : "#f4f3f4"}
-                            trackColor={TRACK_COLOR}
-                            onValueChange={() => setEnterprise(!enterprise)}
-                            value={enterprise}
-                        />
-                    </View>
-                </TouchableWithoutFeedback>
+                {
+                    (false)
+                    ? <TouchableWithoutFeedback onPress={() => setEnterprise(!enterprise)} >
+                        <View style={homeStyles.viewRow}>
+                            <Text style={homeStyles.text}>
+                                Mode enterprise: 
+                            </Text>
+                            <Switch
+                                thumbColor={enterprise ? "darkcyan" : "#f4f3f4"}
+                                trackColor={TRACK_COLOR}
+                                onValueChange={() => setEnterprise(!enterprise)}
+                                value={enterprise}
+                            />
+                        </View>
+                    </TouchableWithoutFeedback>
+                    : <Icon
+                        containerStyle={{ paddingRight: '5%' }}
+                        onPress={refresh}
+                        name='refresh-outline' 
+                        color='gray'
+                        type='ionicon' 
+                        size={20}
+                    />
+                }   
             </View>
             <View style={homeStyles.body}>
                 {

@@ -445,10 +445,12 @@ const SeePost = ({ navigation, route }) => {   console.log('___reactions___', ro
 
     useEffect(() => { 
         getMyId().then(res => setMeId(res));
-        getComments().then(res => { 
-            setPost({ ... post, commentaries: res.data.length });
-            setCommentaries(res);
-        });
+        if(post.commentFlag) {
+            getComments().then(res => { 
+                setPost({ ... post, commentaries: res.data.length });
+                setCommentaries(res);
+            });
+        }
     }, []);
 
 

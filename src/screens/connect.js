@@ -177,7 +177,7 @@ const Connect = ({ navigation, route }) => {
                             rounded
                             size="medium"
                             containerStyle={{ backgroundColor: 'lightgray' }}
-                            icon={{ name: 'camera-outline', color: 'white', type: 'ionicon', size: 100 }} 
+                            icon={{ name: 'camera-outline', color: 'white', type: 'ionicon', size: 50 }} 
                         />
                     }
                     <View style={{ paddingLeft: 10 }}>
