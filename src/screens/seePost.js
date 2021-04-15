@@ -9,6 +9,7 @@ import {
     ToastAndroid,
     ActivityIndicator,
     Alert,
+    RefreshControl,
     Modal,
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
@@ -34,7 +35,7 @@ const MODAL_BLANK = {
     commentFlag: false 
 }
 
-const SeePost = ({ navigation, route }) => {   console.log('___reactions___', route.params.post.reactions);
+const SeePost = ({ navigation, route }) => {   
     const [meId, setMeId] = useState(0);
     const [user, setUser] = useState(route.params.user);
     const [post, setPost] = useState(route.params.post);
@@ -43,6 +44,7 @@ const SeePost = ({ navigation, route }) => {   console.log('___reactions___', ro
     const [commentaries, setCommentaries] = useState({ flag: false, data: [] });
     const [bottomSheetFlag, setBottomSheetFlag] = useState({ type: '', flag: false });
     const [modal, setModal] = useState(MODAL_BLANK); 
+    const [loading, setLoading] = useState(false);
 
     let commentInput = '';
 
@@ -443,14 +445,20 @@ const SeePost = ({ navigation, route }) => {   console.log('___reactions___', ro
         </ListItem>
     )
 
-    useEffect(() => { 
-        getMyId().then(res => setMeId(res));
+    const refresh = () => {
         if(post.commentFlag) {
+            setLoading(true);
             getComments().then(res => { 
                 setPost({ ... post, commentaries: res.data.length });
                 setCommentaries(res);
+                setLoading(false);
             });
         }
+    }
+
+    useEffect(() => { 
+        getMyId().then(res => setMeId(res));
+        refresh();
     }, []);
 
 
@@ -504,292 +512,298 @@ const SeePost = ({ navigation, route }) => {   console.log('___reactions___', ro
                     )) 
                 }
             </BottomSheet>
-            <View style={seePostStyles.body}>  
-                <ScrollView>
-                    <View style={seePostStyles.viewRow}>
-                        {
-                            (user.img == null)
-                            ? <Avatar 
-                                rounded
-                                size="medium"
-                                containerStyle={{ backgroundColor: 'lightgray' }}
-                                icon={CAMERA_ICON} 
-                                onPress={() => navigation.navigate('UserProfile', { userId: user.id })}
-                            />
-                            : <Avatar 
-                                rounded 
-                                size="medium" 
-                                source={{ uri: `data:image/png;base64,${user.img}` }}
-                                onPress={() => navigation.navigate('UserProfile', { userId: user.id } )}
-                            />
-                        }
-                        <View>
-                            <Text style={[ seePostStyles.tittleText, { paddingLeft: '2%' } ]}>
-                                {user.name} {user.lastName}
-                            </Text>
-                            <Text style={seePostStyles.text}>
-                                {user.email}
-                            </Text>
-                            <View style={seePostStyles.viewRow}>
-                                <Text style={seePostStyles.text}>
-                                    {
-                                        (post.dateEdit != null)
-                                        ? `Last edit: ${post.dateEdit}` 
-                                        : post.dateCreation
-                                    }       
-                                </Text>
-                                {
-                                    (post.connectFlag)
-                                    ? <Icon
-                                        style={{ paddingLeft: 5 }}
-                                        name='person-circle-outline' 
-                                        color='gray' 
-                                        type='ionicon' 
-                                        size={15}
-                                    />
-                                    : <Icon
-                                        style={{ paddingLeft: 5 }}
-                                        name='earth-outline' 
-                                        color='gray' 
-                                        type='ionicon' 
-                                        size={15}
-                                    />
-                                }
-                                {
-                                    (post.commentFlag)
-                                    ? <Icon
-                                        style={{ paddingLeft: 5 }}
-                                        name='chatbubble-ellipses-outline' 
-                                        color='gray' 
-                                        type='ionicon' 
-                                        size={15}
-                                    />
-                                    : <Icon
-                                        style={{ paddingLeft: 5 }}
-                                        name='chatbubble-outline' 
-                                        color='gray' 
-                                        type='ionicon' 
-                                        size={15}
-                                    />
-                                } 
-                            </View>
-                        </View>
-                    </View> 
-                    <View style={[ seePostStyles.inputText, { backgroundColor: '#f4f6fc' } ]}>
-                        <Text style={seePostStyles.tittleText}>
-                            {post.tittle}
-                        </Text>
-                    </View>
+            <ScrollView
+                contentContainerStyle={seePostStyles.body}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={loading}
+                        onRefresh={refresh}
+                    />
+                }
+                >
+                <View style={seePostStyles.viewRow}>
                     {
-                        (post.description.length == 0)
-                        ? null
-                        : <View style={seePostStyles.inputText}>
-                            <Text>
-                                {post.description}
-                            </Text>
-                        </View>
-                    }
-                    {
-                        (post.img == null)
-                        ? null
-                        : <Image
-                            source={{ uri: `data:image/png;base64,${post.img}` }}
-                            style={seePostStyles.image}
+                        (user.img == null)
+                        ? <Avatar 
+                            rounded
+                            size="medium"
+                            containerStyle={{ backgroundColor: 'lightgray' }}
+                            icon={CAMERA_ICON} 
+                            onPress={() => navigation.navigate('UserProfile', { userId: user.id })}
                         />
-                    }     
-                    <View style={[seePostStyles.viewReactions, seePostStyles.topDivider]}>
+                        : <Avatar 
+                            rounded 
+                            size="medium" 
+                            source={{ uri: `data:image/png;base64,${user.img}` }}
+                            onPress={() => navigation.navigate('UserProfile', { userId: user.id } )}
+                        />
+                    }
+                    <View>
+                        <Text style={[ seePostStyles.tittleText, { paddingLeft: '2%' } ]}>
+                            {user.name} {user.lastName}
+                        </Text>
+                        <Text style={seePostStyles.text}>
+                            {user.email}
+                        </Text>
                         <View style={seePostStyles.viewRow}>
-                            <View style={seePostStyles.addIconView}>
-                                <Icon
-                                    onPress={() => setModal({ flag: true, commentFlag: false })}
-                                    name='add-outline' 
-                                    color='gray' 
-                                    type='ionicon' 
-                                    size={20}
-                                />
-                            </View>
+                            <Text style={seePostStyles.text}>
+                                {
+                                    (post.dateEdit != null)
+                                    ? `Last edit: ${post.dateEdit}` 
+                                    : post.dateCreation
+                                }       
+                            </Text>
                             {
-                                (!post)
-                                ? null
-                                : post.reactions.map((item, index) => (
-                                    !(item.num > 0)
-                                    ? null
-                                    : <TouchableOpacity 
-                                        onPress={() => handleReaction(item.id)}
-                                        style={[seePostStyles.viewRow, { marginLeft: 10 }]}
-                                        key={index}
-                                        >
-                                        <Icon
-                                            name={item.description} 
-                                            color={ (item.me) ? '#3465d9' : 'gray' } 
-                                            type='ionicon' 
-                                            size={15}
-                                        />
-                                        <Text style={ (item.me) ? { color: '#3465d9' } : { color: 'gray' } }>
-                                            {item.num}
-                                        </Text>
-                                    </TouchableOpacity>
-                                )) 
-                            }
-                        </View>
-                        {
-                            (!post.commentFlag)
-                            ? null
-                            : <View style={seePostStyles.viewRow}>
-                                <Icon
-                                    style={{ paddingHorizontal: 5 }}
-                                    name='chatbubbles-outline' 
+                                (post.connectFlag)
+                                ? <Icon
+                                    style={{ paddingLeft: 5 }}
+                                    name='person-circle-outline' 
                                     color='gray' 
                                     type='ionicon' 
                                     size={15}
                                 />
-                                <Text>
-                                    {post.commentaries}
-                                </Text>
-                            </View>
-                        }
-                    </View>  
-                    <Text style={[ seePostStyles.tittleText, seePostStyles.commentaryText ]}>
-                        Commentary
+                                : <Icon
+                                    style={{ paddingLeft: 5 }}
+                                    name='earth-outline' 
+                                    color='gray' 
+                                    type='ionicon' 
+                                    size={15}
+                                />
+                            }
+                            {
+                                (post.commentFlag)
+                                ? <Icon
+                                    style={{ paddingLeft: 5 }}
+                                    name='chatbubble-ellipses-outline' 
+                                    color='gray' 
+                                    type='ionicon' 
+                                    size={15}
+                                />
+                                : <Icon
+                                    style={{ paddingLeft: 5 }}
+                                    name='chatbubble-outline' 
+                                    color='gray' 
+                                    type='ionicon' 
+                                    size={15}
+                                />
+                            } 
+                        </View>
+                    </View>
+                </View> 
+                <View style={[ seePostStyles.inputText, { backgroundColor: '#f4f6fc' } ]}>
+                    <Text style={seePostStyles.tittleText}>
+                        {post.tittle}
                     </Text>
-                    <View style={seePostStyles.topDivider}>
+                </View>
+                {
+                    (post.description.length == 0)
+                    ? null
+                    : <View style={seePostStyles.inputText}>
+                        <Text>
+                            {post.description}
+                        </Text>
+                    </View>
+                }
+                {
+                    (post.img == null)
+                    ? null
+                    : <Image
+                        source={{ uri: `data:image/png;base64,${post.img}` }}
+                        style={seePostStyles.image}
+                    />
+                }     
+                <View style={[seePostStyles.viewReactions, seePostStyles.topDivider]}>
+                    <View style={seePostStyles.viewRow}>
+                        <View style={seePostStyles.addIconView}>
+                            <Icon
+                                onPress={() => setModal({ flag: true, commentFlag: false })}
+                                name='add-outline' 
+                                color='gray' 
+                                type='ionicon' 
+                                size={20}
+                            />
+                        </View>
                         {
-                            (commentaries.flag) 
-                            ? <ActivityIndicator size="large" color="#00ff00" />
-                            : (!commentaries.data.length)
-                            ? <View style={seePostStyles.viewResponse}>
-                                <Text style={[ seePostStyles.tittleText, { color: 'gray' }]}>
+                            (!post)
+                            ? null
+                            : post.reactions.map((item, index) => (
+                                !(item.num > 0)
+                                ? null
+                                : <TouchableOpacity 
+                                    onPress={() => handleReaction(item.id)}
+                                    style={[seePostStyles.viewRow, { marginLeft: 10 }]}
+                                    key={index}
+                                    >
+                                    <Icon
+                                        name={item.description} 
+                                        color={ (item.me) ? '#3465d9' : 'gray' } 
+                                        type='ionicon' 
+                                        size={15}
+                                    />
+                                    <Text style={ (item.me) ? { color: '#3465d9' } : { color: 'gray' } }>
+                                        {item.num}
+                                    </Text>
+                                </TouchableOpacity>
+                            )) 
+                        }
+                    </View>
+                    {
+                        (!post.commentFlag)
+                        ? null
+                        : <View style={seePostStyles.viewRow}>
+                            <Icon
+                                style={{ paddingHorizontal: 5 }}
+                                name='chatbubbles-outline' 
+                                color='gray' 
+                                type='ionicon' 
+                                size={15}
+                            />
+                            <Text>
+                                {post.commentaries}
+                            </Text>
+                        </View>
+                    }
+                </View>  
+                <Text style={[ seePostStyles.tittleText, seePostStyles.commentaryText ]}>
+                    Commentary
+                </Text>
+                <View style={seePostStyles.topDivider}>
+                    {
+                        (commentaries.flag) 
+                        ? <ActivityIndicator size="large" color="#00ff00" />
+                        : (!commentaries.data.length)
+                        ? <View style={seePostStyles.viewResponse}>
+                            <Text style={[ seePostStyles.tittleText, { color: 'gray' }]}>
+                                {
+                                    (!post.commentFlag)
+                                    ? 'This post does not allow comments'
+                                    : 'Be the first to comment!'
+                                } 
+                            </Text>
+                        </View>
+                        : (
+                            commentaries.data.map((item, index) => ( 
+                                <View
+                                    key={index} 
+                                    style={[seePostStyles.viewRow, { marginVertical: '2%' }]}
+                                    >
                                     {
-                                        (!post.commentFlag)
-                                        ? 'This post does not allow comments'
-                                        : 'Be the first to comment!'
-                                    } 
-                                </Text>
-                            </View>
-                            : (
-                                commentaries.data.map((item, index) => ( 
-                                    <View
-                                        key={index} 
-                                        style={[seePostStyles.viewRow, { marginVertical: '2%' }]}
-                                        >
-                                        {
-                                            (item.img == null)
-                                            ? <Avatar 
-                                                rounded
-                                                size="medium"
-                                                containerStyle={{ backgroundColor: 'lightgray' }}
-                                                icon={CAMERA_ICON} 
-                                                onPress={() => navigation.navigate('UserProfile', { userId: item.userId })}
-                                            />
-                                            : <Avatar 
-                                                rounded 
-                                                size="medium" 
-                                                source={{ uri: `data:image/png;base64,${item.img}` }}
-                                                onPress={() => navigation.navigate('UserProfile', { userId: item.userId })}
-                                            />
-                                        }
-                                        <View>
-                                            <View 
-                                                style={{
-                                                    borderRadius: 10, 
-                                                    backgroundColor: 'white', 
-                                                    padding: '3%', 
-                                                    marginLeft: '2%',
-                                                }}
-                                                >
-                                                <View style={[seePostStyles.viewRow, { justifyContent: 'space-between' }]}>
-                                                    <Text style={seePostStyles.tittleText}>
-                                                        {item.name} {item.lastName}
-                                                    </Text>
-                                                    {
-                                                        (meId == item.userId)
-                                                        ? <Icon
-                                                            onPress={() => handleOptionComment(item)}
-                                                            name='ellipsis-vertical' 
-                                                            color='gray' 
-                                                            type='ionicon' 
-                                                            size={15}
-                                                        />
-                                                        : <Icon
-                                                            onPress={()=> console.log('respuesta')}
-                                                            name='chatbubble-ellipses-outline' 
-                                                            color='gray' 
-                                                            type='ionicon' 
-                                                            size={15}
-                                                        />   
-                                                    }
-                                                </View>
-                                                <View style={[seePostStyles.viewRow, { paddingBottom: 10 }]}>
-                                                    <Text style={{ color: 'gray' }}>
-                                                        { 
-                                                            (item.dateEdit != null)
-                                                            ? `${item.dateEdit} (edited)`
-                                                            : item.dateCreation
-                                                        }
-                                                    </Text>
-                                                    {
-                                                        (item.responses == 0)
-                                                        ? null
-                                                        : <View style={seePostStyles.viewRow}>
-                                                            <Icon
-                                                                style={{ marginHorizontal: '3%' }}
-                                                                name='chatbubbles-outline' 
-                                                                color='gray' 
-                                                                type='ionicon' 
-                                                                size={20}
-                                                            />
-                                                            <Text style={{ color:'gray' }}>
-                                                                {item.responses}
-                                                            </Text>
-                                                        </View>
-                                                    }
-                                                </View>
-                                                <Text style={{ color: 'gray' }}>
-                                                    {item.text}
+                                        (item.img == null)
+                                        ? <Avatar 
+                                            rounded
+                                            size="medium"
+                                            containerStyle={{ backgroundColor: 'lightgray' }}
+                                            icon={CAMERA_ICON} 
+                                            onPress={() => navigation.navigate('UserProfile', { userId: item.userId })}
+                                        />
+                                        : <Avatar 
+                                            rounded 
+                                            size="medium" 
+                                            source={{ uri: `data:image/png;base64,${item.img}` }}
+                                            onPress={() => navigation.navigate('UserProfile', { userId: item.userId })}
+                                        />
+                                    }
+                                    <View>
+                                        <View 
+                                            style={{
+                                                borderRadius: 10, 
+                                                backgroundColor: 'white', 
+                                                padding: '3%', 
+                                                marginLeft: '2%',
+                                            }}
+                                            >
+                                            <View style={[seePostStyles.viewRow, { justifyContent: 'space-between' }]}>
+                                                <Text style={seePostStyles.tittleText}>
+                                                    {item.name} {item.lastName}
                                                 </Text>
-                                            </View>  
-                                            <View style={seePostStyles.viewReactions}>
-                                                <View style={seePostStyles.viewRow}>
-                                                    <View style={seePostStyles.addIconView}>
+                                                {
+                                                    (meId == item.userId)
+                                                    ? <Icon
+                                                        onPress={() => handleOptionComment(item)}
+                                                        name='ellipsis-vertical' 
+                                                        color='gray' 
+                                                        type='ionicon' 
+                                                        size={15}
+                                                    />
+                                                    : <Icon
+                                                        onPress={()=> console.log('respuesta')}
+                                                        name='chatbubble-ellipses-outline' 
+                                                        color='gray' 
+                                                        type='ionicon' 
+                                                        size={15}
+                                                    />   
+                                                }
+                                            </View>
+                                            <View style={[seePostStyles.viewRow, { paddingBottom: 10 }]}>
+                                                <Text style={{ color: 'gray' }}>
+                                                    { 
+                                                        (item.dateEdit != null)
+                                                        ? `${item.dateEdit} (edited)`
+                                                        : item.dateCreation
+                                                    }
+                                                </Text>
+                                                {
+                                                    (item.responses == 0)
+                                                    ? null
+                                                    : <View style={seePostStyles.viewRow}>
                                                         <Icon
-                                                            onPress={() => pressAddIconComment(item)}
-                                                            name='add-outline' 
+                                                            style={{ marginHorizontal: '3%' }}
+                                                            name='chatbubbles-outline' 
                                                             color='gray' 
                                                             type='ionicon' 
                                                             size={20}
                                                         />
-                                                    </View> 
-                                                    {
-                                                        item.reactions.map((rea, index) => (
-                                                            !(rea.num > 0)
-                                                            ? null
-                                                            : <TouchableOpacity 
-                                                                onPress={() => handleCommentReaction(rea.id, item)}
-                                                                style={[seePostStyles.viewRow, { marginLeft: 10 }]}
-                                                                key={index}
-                                                                >
-                                                                <Icon
-                                                                    name={rea.description} 
-                                                                    color={ (rea.me) ? '#3465d9' : 'gray' } 
-                                                                    type='ionicon' 
-                                                                    size={15}
-                                                                />
-                                                                <Text style={ (rea.me) ? { color: '#3465d9' } : { color: 'gray' } }>
-                                                                    {rea.num}
-                                                                </Text>
-                                                            </TouchableOpacity>
-                                                        )) 
-                                                    }
-                                                </View>
-                                            </View>    
-                                        </View>
+                                                        <Text style={{ color:'gray' }}>
+                                                            {item.responses}
+                                                        </Text>
+                                                    </View>
+                                                }
+                                            </View>
+                                            <Text style={{ color: 'gray' }}>
+                                                {item.text}
+                                            </Text>
+                                        </View>  
+                                        <View style={seePostStyles.viewReactions}>
+                                            <View style={seePostStyles.viewRow}>
+                                                <View style={seePostStyles.addIconView}>
+                                                    <Icon
+                                                        onPress={() => pressAddIconComment(item)}
+                                                        name='add-outline' 
+                                                        color='gray' 
+                                                        type='ionicon' 
+                                                        size={20}
+                                                    />
+                                                </View> 
+                                                {
+                                                    item.reactions.map((rea, index) => (
+                                                        !(rea.num > 0)
+                                                        ? null
+                                                        : <TouchableOpacity 
+                                                            onPress={() => handleCommentReaction(rea.id, item)}
+                                                            style={[seePostStyles.viewRow, { marginLeft: 10 }]}
+                                                            key={index}
+                                                            >
+                                                            <Icon
+                                                                name={rea.description} 
+                                                                color={ (rea.me) ? '#3465d9' : 'gray' } 
+                                                                type='ionicon' 
+                                                                size={15}
+                                                            />
+                                                            <Text style={ (rea.me) ? { color: '#3465d9' } : { color: 'gray' } }>
+                                                                {rea.num}
+                                                            </Text>
+                                                        </TouchableOpacity>
+                                                    )) 
+                                                }
+                                            </View>
+                                        </View>    
                                     </View>
-                                ))
-                            )
-                        }
-                    </View>
-                </ScrollView>
-            </View> 
+                                </View>
+                            ))
+                        )
+                    }
+                </View>
+            </ScrollView>
             <View style={[ seePostStyles.viewRow, seePostStyles.footer ]}>  
                 <TextInput
                     ref={input => commentInput = input}

@@ -9,6 +9,7 @@ import {
     ActivityIndicator,
     ToastAndroid,
     ScrollView,
+    RefreshControl,
     Image
 } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
@@ -34,7 +35,7 @@ const Home = ({ navigation, route }) => {
     const [enterprise, setEnterprise] = useState(false);
     const [posts, setPosts] = useState([]);
     const [searchBar, setSearchBar] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState({ loading: false, first: true });
 
     const toast = (message) => { 
         ToastAndroid.showWithGravity(
@@ -74,7 +75,7 @@ const Home = ({ navigation, route }) => {
     }
 
     const getPost = async () => { 
-        setLoading(true);
+        setLoading({ ...loading, loading: true });
         const token = await AsyncStorage.getItem('token'); 
         const data = await Http.send('GET', 'post', null, token); 
         
@@ -284,7 +285,7 @@ const Home = ({ navigation, route }) => {
     const refresh =() => {
         getPost().then(res => { 
             setPosts(res);
-            setLoading(false);
+            setLoading({ first: false, loading: false });
         });
     }
 
@@ -321,36 +322,32 @@ const Home = ({ navigation, route }) => {
                     </Text>
                     <Icon name='search-outline' color='gray' type='ionicon' size={20}/>
                 </TouchableOpacity>
-                {
-                    (false)
-                    ? <TouchableWithoutFeedback onPress={() => setEnterprise(!enterprise)} >
-                        <View style={homeStyles.viewRow}>
-                            <Text style={homeStyles.text}>
-                                Mode enterprise: 
-                            </Text>
-                            <Switch
-                                thumbColor={enterprise ? "darkcyan" : "#f4f3f4"}
-                                trackColor={TRACK_COLOR}
-                                onValueChange={() => setEnterprise(!enterprise)}
-                                value={enterprise}
-                            />
-                        </View>
-                    </TouchableWithoutFeedback>
-                    : <Icon
-                        containerStyle={{ paddingRight: '5%' }}
-                        onPress={refresh}
-                        name='refresh-outline' 
-                        color='gray'
-                        type='ionicon' 
-                        size={20}
-                    />
-                }   
+                <TouchableWithoutFeedback onPress={() => setEnterprise(!enterprise)} >
+                    <View style={homeStyles.viewRow}>
+                        <Text style={homeStyles.text}>
+                            Mode enterprise: 
+                        </Text>
+                        <Switch
+                            thumbColor={enterprise ? "darkcyan" : "#f4f3f4"}
+                            trackColor={TRACK_COLOR}
+                            onValueChange={() => setEnterprise(!enterprise)}
+                            value={enterprise}
+                        />
+                    </View>
+                </TouchableWithoutFeedback>
             </View>
             <View style={homeStyles.body}>
                 {
-                    (loading)
+                    (loading.loading && loading.first)
                     ? <ActivityIndicator size="large" color="#00ff00" />
-                    : <ScrollView>
+                    : <ScrollView
+                        refreshControl={
+                            <RefreshControl
+                                refreshing={loading.loading}
+                                onRefresh={refresh}
+                            />
+                        }
+                        >
                         { 
                             posts.map((post, index) => (   
                                 <PostItemC

@@ -9,11 +9,13 @@ import {
     TextInput,
     ToastAndroid,
     TouchableOpacity, 
+    RefreshControl,
     View
 } from 'react-native';
 
 import { Icon, ListItem, Avatar, Image, BottomSheet } from 'react-native-elements';
 import AsyncStorage from '@react-native-community/async-storage';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 import Http from '../components/Http';
 import ModalListC from '../components/modalList';
@@ -72,12 +74,6 @@ const IDIOMS_BASE = [
     { id: 3, name: 'French', lvl: 'basic' },
 ]
 
-const AWARDS_BASE = [
-    { id: 1, description: 'Award 1', date: '2020' },
-    { id: 2, description: 'Award 2',   date: '2017' },
-    { id: 3, description: 'Award 3', date: '2015' },
-]
-
 const USER_BASE = {
     img: null,
     name: 'name',
@@ -118,14 +114,20 @@ const BSO_BLANK = [
     }
 ];
 
+const USER_JSON_BLANK = {
+    description: '', 
+    date: '' 
+}
+
 const UserProfile = ({ navigation, route }) => { 
     const [user, setUser] = useState(USER_BASE);
     const [me, setMe] = useState({ id: 0 });
-    const [userJson, setUserJson] = useState({ description: '' });
-    const [loading, setLoading] = useState(false);
+    const [userJson, setUserJson] = useState(USER_JSON_BLANK);
+    const [loading, setLoading] = useState({ loading: false, first: true });
     const [modalList, setModalList] = useState({ tittle: '', flag: false });
     const [modal, setModal] = useState({ type: '', flag: false, editFlag: false });
     const [bottomSheetFlag, setBottomSheetFlag] = useState({ flag: false, options: BSO_BLANK });
+    const [dateTimeFlag, setDateTimeFlag] = useState(false);
 
 
     const toast = (message) => { 
@@ -167,7 +169,7 @@ const UserProfile = ({ navigation, route }) => {
     }
 
     const getUser = async () => {   
-        setLoading(true);
+        setLoading({ ...loading, loading: true });
         const userId = route.params.userId;
         const token = await AsyncStorage.getItem('token'); 
         const data = await Http.send('GET', `user/${userId}`, null, token);
@@ -224,7 +226,7 @@ const UserProfile = ({ navigation, route }) => {
     }
 
     const updateUserJson = async (type, dataP) => {
-        setLoading(true);
+        setLoading({ ...loading, loading: true });
         const token = await AsyncStorage.getItem('token'); 
         const data = await Http.send('PUT', `user/field/${type}`, { data: dataP }, token);
     
@@ -250,7 +252,7 @@ const UserProfile = ({ navigation, route }) => {
             }
         }
 
-        setLoading(false);
+        setLoading({ ...loading, loading: false });
     }
 
     const BottomSheetItemC = ({ item }) => ( 
@@ -269,19 +271,39 @@ const UserProfile = ({ navigation, route }) => {
         </ListItem>
     )
 
+    const IconOption = ({ item }) => (
+        <Icon
+            onPress={() => renderItemOptions(item)}
+            name='ellipsis-vertical'
+            color='gray'
+            type='ionicon'
+            size={30}
+        />
+    )
+
     const renderItemSkill = ({ item }) => ( 
         <View style={userDetailStyles.viewItem}> 
             <View style={userDetailStyles.item}>
                 <Text style={{ fontSize: 15 }}>
                     {item.description}
                 </Text> 
-                <Icon
-                    onPress={() => renderItemOptions(item)}
-                    name='ellipsis-vertical'
-                    color='gray'
-                    type='ionicon'
-                    size={30}
-                />
+                <IconOption item={item}/>
+            </View>
+        </View>
+    )
+
+    const renderItemAward = ({ item }) => ( 
+        <View style={userDetailStyles.viewItem}> 
+            <View style={userDetailStyles.item}>
+                <View>
+                    <Text style={{ fontSize: 15 }}>
+                        {item.description}
+                    </Text>
+                    <Text style={{ fontSize: 15, color: 'gray' }}>
+                        {item.date}
+                    </Text>
+                </View>
+                <IconOption item={item}/>
             </View>
         </View>
     )
@@ -342,8 +364,8 @@ const UserProfile = ({ navigation, route }) => {
                 </View>
             }
             <View style={userDetailStyles.viewRow}>
-                {
-                    reactions.map((reaction, index) => { //esta parte dejo de funcionar, revisar!
+                { 
+                    reactions.map((reaction, index) => ( 
                         !(reaction.num > 0)
                         ? null
                         : <View
@@ -354,7 +376,7 @@ const UserProfile = ({ navigation, route }) => {
                                 {reaction.num}
                             </Text>
                         </View>
-                    })
+                    ))
                 }
             </View> 
         </View>
@@ -423,11 +445,11 @@ const UserProfile = ({ navigation, route }) => {
     const handleAddPress = () => { 
         switch(modalList.tittle) {
             case 'Awards':
-                console.log('agregar Award');
+                setModal({ type: 'award', flag: true, editFlag: false });
                 break;
 
             case 'Idioms':
-                console.log('agregar Idiom');
+                setModal({ type: 'idiom', flag: true, editFlag: false });
                 break;
                 
             case 'Skills':
@@ -467,7 +489,8 @@ const UserProfile = ({ navigation, route }) => {
     }
 
     const onPressModal = () => {
-        if(userJson.description.length < 1) {
+        if((modal.type == 'skill' || modal.type == 'interest') && userJson.description.length < 1
+            || modal.type == 'award' && (userJson.description.length < 1 || userJson.date.length < 1)) {
             Alert.alert('Empty field', 'Fill all field pls');
         
         } else {
@@ -497,14 +520,14 @@ const UserProfile = ({ navigation, route }) => {
 
                 case 'interest': 
                     if(modal.editFlag) {
-                        data = user.skills.map(skill => {
-                            let skillAux = skill;
+                        data = user.interest.map(interest => {
+                            let interestAux = interest;
                 
-                            if(skill.description == userJson.ref) { 
-                                skillAux.description = userJson.description;
+                            if(interest.description == userJson.ref) { 
+                                interestAux.description = userJson.description;
                             }
                 
-                            return skillAux;
+                            return interestAux;
                         });
         
                     } else { 
@@ -515,10 +538,34 @@ const UserProfile = ({ navigation, route }) => {
                     setUser({ ...user, interest: data });
                     updateUserJson('interest', data);
                     break;
+
+                case 'award':
+                    if(modal.editFlag) {
+                        data = user.awards.map(award => {
+                            let awardAux = award;
+                
+                            if(award == userJson.ref) { 
+                                awardAux.description = userJson.description;
+                                awardAux.date = userJson.date;
+                            }
+                
+                            return awardsAux;
+                        });
+        
+                    } else {
+                        const date = userJson.date.toString().split(':')[0];
+                        
+                        data = user.awards;
+                        data.unshift({ description: userJson.description, date });
+                    }
+
+                    setUser({ ...user, awards: data });
+                    updateUserJson('award', data);
+                    break;
             }
 
             setModal({ ...modal, flag: false, editFlag: false });
-            setUserJson({ description: '' });
+            setUserJson(USER_JSON_BLANK);
         }
     }
 
@@ -527,6 +574,13 @@ const UserProfile = ({ navigation, route }) => {
 
         setUser({ ...user, skills });
         updateUserJson('skill', skills);
+    }
+
+    const deleteAward = (awardObj) => {
+        const awards = user.awards.filter(i => i != awardObj);
+
+        setUser({ ...user, awards });
+        updateUserJson('award', awards);
     }
 
     const deleteInterest = (Obj) => {
@@ -540,8 +594,19 @@ const UserProfile = ({ navigation, route }) => {
         let bsoAux = BSO_BLANK;
         
         switch(modalList.tittle) {
-            case 'Awards':
-                console.log('opcion de Awards');    
+            case 'Awards':               
+                bsoAux = handleBottomSheetOptions(
+                    item.description,
+                    () => { 
+                        setUserJson({ ...item, ref: item }); 
+                        setModal({ type: 'award', flag: true, editFlag: true }); 
+                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false }); 
+                    },
+                    () => {
+                        deleteAward(item);
+                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
+                    }
+                );
                 break;
 
             case 'Idioms':
@@ -590,13 +655,16 @@ const UserProfile = ({ navigation, route }) => {
         setUser(newUser);
     }
 
+    const refresh = () => {
+        getUser().then(res => {  
+            setUser(res);
+            setLoading({ first: false, loading: false }); 
+        });
+    }
 
     useEffect(() => { 
         getMe().then(res => setMe(res));
-        getUser().then(res => {  
-            setUser(res);
-            setLoading(false); 
-        }); 
+        refresh(); 
     }, []);
 
     const test = (userAux) => {
@@ -604,13 +672,24 @@ const UserProfile = ({ navigation, route }) => {
             ...userAux, 
             experiences: EXPERIENCE_BASE,
             idioms: IDIOMS_BASE,
-            awards: AWARDS_BASE,
             qualifications: QUALIFICATION_BASE
         }; 
     }
+
+    const handlePicker = (date) => { 
+        setUserJson({ ...userJson, date });
+        setDateTimeFlag(false); 
+    }
+
     
     return (
         <View style={userDetailStyles.container}>
+            <DateTimePickerModal
+                isVisible={dateTimeFlag}
+                mode="date"
+                onConfirm={handlePicker}
+                onCancel={() => setDateTimeFlag(false)}
+            />
             <Modal 
                 animationType="slide"
                 transparent
@@ -618,14 +697,14 @@ const UserProfile = ({ navigation, route }) => {
                 onRequestClose={() => setModal({ ...modal, flag: false })}
                 >
                 <View style={userDetailStyles.modal}>
-                    <View style={userDetailStyles.viewModal}>
-                        {
-                            (modal.type == 'skill' || modal.type == 'interest')
-                            ? <View style ={{ alignItems: 'center' }}> 
-                                <Text style={userDetailStyles.tittleItem}>
-                                    {modal.type}
-                                </Text>
-                                <TextInput
+                    <View style={userDetailStyles.viewModal}>  
+                        <View style ={{ alignItems: 'center' }}> 
+                            <Text style={userDetailStyles.tittleItem}>
+                                {modal.type}
+                            </Text>
+                            {
+                                (modal.type == 'skill' || modal.type == 'interest')
+                                ? <TextInput
                                     placeholder={`Write a ${modal.type}!`}  
                                     onChangeText={description => setUserJson({ ...userJson, description })}
                                     onSubmitEditing={onPressModal}
@@ -633,21 +712,39 @@ const UserProfile = ({ navigation, route }) => {
                                     value={userJson.description}
                                     style={userDetailStyles.input}
                                 />
-                                <TouchableOpacity 
-                                    onPress={onPressModal}
-                                    style={userDetailStyles.button}
-                                    >
-                                    {
-                                        (loading)
-                                        ? <ActivityIndicator size="small" color="#00ff00" />
-                                        : <Text style={userDetailStyles.buttonText}>
-                                            Finish and send
+                                : (modal.type == 'award')
+                                ? <View style={{ width: '100%' }}>
+                                    <TextInput
+                                        placeholder={`Write a ${modal.type}!`}  
+                                        onChangeText={description => setUserJson({ ...userJson, description })}
+                                        autoFocus
+                                        value={userJson.description}
+                                        style={userDetailStyles.input}
+                                    />
+                                    <TouchableOpacity
+                                        style={[ userDetailStyles.input, { paddingVertical: '7%' }]}
+                                        onPressIn={() => setDateTimeFlag(true)}
+                                        >
+                                        <Text style={userDetailStyles.text}>
+                                            Date: {userJson.date.toString().split(':')[0]} 
                                         </Text>
-                                    }
-                                </TouchableOpacity>
-                            </View>
-                            : null
-                        }  
+                                    </TouchableOpacity>
+                                </View>
+                                : null
+                            }
+                            <TouchableOpacity 
+                                onPress={onPressModal}
+                                style={userDetailStyles.button}
+                                >
+                                {
+                                    (loading.loading)
+                                    ? <ActivityIndicator size="small" color="#00ff00" />
+                                    : <Text style={userDetailStyles.buttonText}>
+                                        Finish and send
+                                    </Text>
+                                }
+                            </TouchableOpacity>
+                        </View>  
                     </View>
                 </View>
             </Modal>
@@ -672,6 +769,8 @@ const UserProfile = ({ navigation, route }) => {
                 renderItem={
                     (modalList.tittle == 'Skills' || modalList.tittle == 'Interests')
                     ? renderItemSkill
+                    : (modalList.tittle == 'Awards' || modalList.tittle == 'Idioms')
+                    ? renderItemAward
                     : null
                 }
                 
@@ -688,9 +787,17 @@ const UserProfile = ({ navigation, route }) => {
                 }
             />
             {
-                (loading)
+                (loading.loading && loading.first)
                 ? <ActivityIndicator size="large" color="#00ff00" />
-                : <ScrollView style={userDetailStyles.fill}>
+                : <ScrollView 
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={loading.loading}
+                            onRefresh={refresh}
+                        />
+                    }
+                    contentContainerStyle={userDetailStyles.fill}
+                    >
                     <View style={[ userDetailStyles.viewLinesItem, { paddingTop: '2%' } ]}>
                         { 
                             (user.img == null)
@@ -855,14 +962,26 @@ const UserProfile = ({ navigation, route }) => {
                                         />
                                     </ListItem>
                                 ))
-                            }
+                            } 
                             <SeeMoreButtonC
                                 action={()=> setModalList({ tittle: 'Idioms', flag: true })}
                             />
                         </View>
                     }
                     {
-                        (user.awards == null)
+                        (user.id == me.id && user.awards.length < 1)
+                        ? <View style={userDetailStyles.viewList}>
+                            <Text style={userDetailStyles.tittleList}>
+                                Awards
+                            </Text>
+                            <ListItem>
+                                <ListItemC
+                                    action={() => setModalList({ tittle: 'Awards', flag: true })}
+                                    tittle='No have award? Write one!'
+                                />
+                            </ListItem>
+                        </View>
+                        : (user.awards.length < 1)
                         ? null
                         : <View style={userDetailStyles.viewList}>
                             <Text style={userDetailStyles.tittleList}>

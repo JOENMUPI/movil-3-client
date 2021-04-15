@@ -21,7 +21,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/thumb-350-1076006.png",
         "backgroundColor": "#FFFFFF"
       },
       "package": "com.cykra.FakedIn"

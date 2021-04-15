@@ -61,6 +61,7 @@ const Home = ({ navigation, route }) => {
     const getpost = () => {
         if(route.params) {
             return route.params.post;
+        
         } else {
             return POST_BLANK;
         }
