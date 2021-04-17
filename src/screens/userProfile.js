@@ -286,47 +286,34 @@ const UserProfile = ({ navigation, route }) => {
         } 
     }
 
-    const updateUserJson = async (type, dataP) => {
-        setLoading({ ...loading, loading: true });
-        const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send('PUT', `user/field/${type}`, { data: dataP }, token);
-    
-        (!data) 
-        ? Alert.alert('Fatal Error', 'No data from server...') 
-        : basicResponse(data);
-        
-        setLoading({ ...loading, loading: false });
-    }
-
     const sendData = async (type, endpoint,body) => {
         setLoading({ ...loading, loading: true });
         const token = await AsyncStorage.getItem('token'); 
         const data = await Http.send(type, endpoint, body, token);
     
-        (!data) 
-        ? Alert.alert('Fatal Error', 'No data from server...') 
-        : basicResponse(data);
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+
+        } else {
+            switch(data.typeResponse) {
+                case 'Success':
+                    toast(data.message);
+                    break;
+    
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+                    
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        }
         
         setLoading({ ...loading, loading: false });
     } 
-
-    const basicResponse = (data) => {
-        switch(data.typeResponse) {
-            case 'Success':
-                toast(data.message);
-                break;
-
-            case 'Fail':
-                data.body.errors.forEach(element => {
-                    toast(element.text);
-                });
-                break;
-                
-            default:
-                Alert.alert(data.typeResponse, data.message);
-                break;
-        }
-    }
 
     const BottomSheetItemC = ({ item }) => ( 
         <ListItem containerStyle={item.containerStyle} onPress={item.onPress}>
@@ -538,6 +525,8 @@ const UserProfile = ({ navigation, route }) => {
                 break;
 
             case 'Idioms':
+                setNewLanguage({ description: '' });
+                setNewLvl({ description: '' });
                 setModal({ type: 'idiom', flag: true, editFlag: false });
                 break;
                 
@@ -604,7 +593,7 @@ const UserProfile = ({ navigation, route }) => {
                     }
 
                     setUser({ ...user, skills: data });
-                    updateUserJson('skill', data);
+                    sendData('PUT', 'user/field/skill', { data });
                     break;
 
                 case 'interest': 
@@ -625,7 +614,7 @@ const UserProfile = ({ navigation, route }) => {
                     }
 
                     setUser({ ...user, interest: data });
-                    updateUserJson('interest', data);
+                    sendData('PUT', 'user/field/interest', { data });
                     break;
 
                 case 'award':
@@ -649,22 +638,22 @@ const UserProfile = ({ navigation, route }) => {
                     }
 
                     setUser({ ...user, awards: data });
-                    updateUserJson('award', data);
+                    sendData('PUT', 'user/field/award', { data });
                     break;
                 
                 case 'idiom':
                     if(modal.editFlag) {
-                        data = user.interest.map(interest => {
-                            let interestAux = interest;
+                        data = user.idioms.map(idiom => {
+                            let idiomAux = idiom;
                 
-                            if(interest.description == userJson.ref) { 
-                                interestAux.description = userJson.description;
+                            if(idiom.id == newLanguage.id) { 
+                                idiomAux = { ...idiomAux, lvl: newLvl.description, lvlId: newLvl.id } 
                             }
                 
-                            return interestAux;
+                            return idiomAux;
                         });
 
-                        //updateUserJson('interest', data); update idiom!!!!!!
+                        sendData('PUT', 'language', { languageId: newLanguage.id, levelId: newLvl.id });
                     
                     } else { 
                         data = user.idioms;
@@ -674,12 +663,10 @@ const UserProfile = ({ navigation, route }) => {
                             lvlId: newLvl.id,
                             lvl: newLvl.description,
                         });    
-                         
+
                         sendData('POST', 'language', { languageId: newLanguage.id, levelId: newLvl.id });
                     }
 
-                    setNewLanguage({ description: '' });
-                    setNewLvl({ description: '' });
                     setUser({ ...user, idioms: data });
                     break;
             }
@@ -693,28 +680,28 @@ const UserProfile = ({ navigation, route }) => {
         const skills = user.skills.filter(i => i != skillObj);
 
         setUser({ ...user, skills });
-        updateUserJson('skill', skills);
+        sendData('PUT', 'user/field/skill', { data: skills });
     }
 
     const deleteAward = (awardObj) => {
         const awards = user.awards.filter(i => i != awardObj);
 
         setUser({ ...user, awards });
-        updateUserJson('award', awards);
+        sendData('PUT', 'user/field/award', { data: awards });
     }
 
-    const deleteIdiom = (idiomObj) => {
-        const idioms = user.idioms.filter(i => i != idiomObj);
+    const deleteIdiom = (idiomObj) => { 
+        const idioms = user.idioms.filter(i => i.id != idiomObj.id);
 
         setUser({ ...user, idioms });
-        //updateUserJson('award', awards); delete el idiom
+        sendData('DELETE', `language/${idiomObj.id}`, null);
     }
 
     const deleteInterest = (Obj) => {
         const interest = user.interest.filter(i => i != Obj);
 
         setUser({ ...user, interest });
-        updateUserJson('interest', interest);
+        sendData('PUT', 'user/field/interest', { data: interest });
     }
 
     const renderItemOptions = (item) => {
@@ -738,7 +725,7 @@ const UserProfile = ({ navigation, route }) => {
 
             case 'Idioms':
                 bsoAux = handleBottomSheetOptions(
-                    item.description,
+                    item.name,
                     () => { 
                         setNewLanguage({ id: item.id, description: item.name });
                         setNewLvl({ id: item.lvlId, description: item.lvl });
@@ -746,7 +733,7 @@ const UserProfile = ({ navigation, route }) => {
                         setBottomSheetFlag({ ...bottomSheetFlag, flag: false }); 
                     },
                     () => {
-                        deleteSkill(item);
+                        deleteIdiom(item);
                         setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
                     }
                 );
@@ -879,6 +866,7 @@ const UserProfile = ({ navigation, route }) => {
                                     <TouchableOpacity
                                         style={[ userDetailStyles.input, { paddingVertical: '7%' }]}
                                         onPressIn={() => setBottomSheetFlag({ options: languages.data, flag: true })}
+                                        disabled={modal.editFlag}
                                         >
                                         <Text style={userDetailStyles.text}>
                                             Language: {newLanguage.description}

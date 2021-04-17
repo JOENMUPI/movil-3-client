@@ -1,185 +1,291 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
+    TouchableOpacity,
+    ScrollView,
+    TextInput,
+    ToastAndroid,
+    ActivityIndicator,
     StyleSheet,
 } from "react-native";
-import { Icon, Input, } from 'react-native-elements'
+import { Icon, Avatar } from 'react-native-elements'
+import AsyncStorage from '@react-native-community/async-storage';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
-import { ScrollView } from 'react-native-gesture-handler';
+import SearchBar from '../components/SearchBar2';
+import Http from '../components/Http';
 
-const educacion = () => {
-    const [vissiblePassFlag] = useState(false);
 
-    const gotoEducation = () => {
-        console.log('hi education');
+const QUALIFICATION_BLANK = {
+    averageScore: null,
+    dateInit: '',
+    dateEnd: null,
+    qualificationId: 0,
+    universityId: 0, 
+}
+
+const USER_BLANK = {
+    img: null,
+    name: '',
+    lastName: ''
+}
+
+const GENERIC_ARK = { 
+    data: [], 
+    flag: false, 
+    selected: null
+}
+
+
+const qualification = () => {
+    const [user, setUser] = useState(USER_BLANK);
+    const [universities, setUniversities] = useState(GENERIC_ARK);
+    const [qualifications, setQualifications] = useState(GENERIC_ARK);
+    const [qualification, setQualification] = useState(QUALIFICATION_BLANK);
+    const [dateTimeFlag, setDateTimeFlag] = useState(false);
+    const [searchFlag, setSearchFlag] = useState(true);
+
+    const toast = (message) => { 
+        ToastAndroid.showWithGravity(
+            message,
+            ToastAndroid.SHORT,
+            ToastAndroid.TOP
+        );
     }
 
-
-    const SaveEducation = () => {
-        console.log('save info')
+    const getUser = async () => {
+        return JSON.parse(await AsyncStorage.getItem('user'));
     }
 
-    const Component = ({ title, action, action1 }) => (
-        <View style={styles.Header}  >
-            <Icon
+    const handleSendbutton = () => { console.log('send');
+        //(route.params) 
+        //? sendPost('PUT')
+        //: sendPost('POST'); 
+    }
 
-                name='close-outline'
-                color='gray'
-                type='ionicon'
-                size={30}
-                checked={vissiblePassFlag}
-                onPress={action}
-            />
-            <Text style={styles.TextStyle} >
-                {title}
-            </Text>
-            <Icon
+    const handlePicker = (date) => { console.log('date:', date); 
+        //setUserJson({ ...userJson, date });
+        setDateTimeFlag(false); 
+    }
 
-                name='save'
-                color='gray'
-                type='ionicon'
-                size={30}
-                onPress={action1}
-            />
+    const searchUniversities = async (value) => {
+        setUniversities({ ...universities, flag: true });
+        const token = await AsyncStorage.getItem('token'); 
+        const data = await Http.send('GET', `university/search/${value}`, null, token); 
+        let aux = [];
+        
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+            
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success':
+                    toast(data.message); 
+                    aux = data.body;
+                    break;
+
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+                    
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        }
+
+        setUniversities({ ...universities, data: aux, flag: false });
+    }
+
+    const UniItemC = ({ item }) => (
+        <View style={styles.viewRow}>
+            {
+                (item.img == null)
+                ? <Avatar 
+                    rounded
+                    size="medium"
+                    containerStyle={{ backgroundColor: 'lightgray' }}
+                    icon={{ name: 'camera-outline', color: 'white', type: 'ionicon', size: 30 }}
+                />
+                : <Avatar 
+                    rounded 
+                    size="medium" 
+                    source={{ uri: `data:image/png;base64,${post.userImg}` }}
+                />
+            }
+            <View style={{ paddingLeft: 5, flex: 1 }}>
+                <Text style={{ fontWeight: "bold", color: "gray", fontSize: 20 }}>
+                    {item.name}
+                </Text>
+                <Text style={{ color: "gray" }}>
+                    {item.description}
+                </Text>    
+            </View>
         </View>
     )
 
-    const List1 = ({ title, title1, title2, title3, title4, subtitle, subtitle1 }) => (
-        <View>
-            <View>
-                <Text style={styles.TextStyle}>{title}</Text>
+    const selectItem = (item) => {
+        setSearchFlag(false);
+        setUniversities({ ...universities, selected: item });
+    }
 
-            </View>
-            <View>
-                <Input
-                    placeholder="Uru"
-                    placeholderTextColor="#888"
-                    style={styles.Name}
-                />
-            </View>
-            <View>
-                <Text style={styles.TextStyle}>{title1}</Text>
-
-            </View>
-            <View>
-                <Input
-                    placeholder="Ingeneria"
-                    placeholderTextColor="#888"
-                    style={styles.Name}
-                />
-            </View>
-            <View >
-                <Text style={styles.TextStyle}>{title2}</Text>
-                <Input
-
-                    placeholder="Ciencias de Computacion"
-                    placeholderTextColor="#888"
-
-                    style={styles.Name}
-
-                />
-            </View>
-            <View>
-                <Text style={styles.TextStyle}>{title3}</Text>
-                <Input
-                    placeholder="2015"
-                    placeholderTextColor="#888"
-                    style={styles.Name}
-                />
-                <Text style={styles.TextStyle}>{title4}</Text>
-                <Input
-                    placeholder="2025"
-                    placeholderTextColor="#888"
-                    style={styles.Name}
-                />
-                <Text>{subtitle}</Text>
-            </View>
-            <View>
-                <Input
-                    placeholder="Nota media (Opcional)"
-                    placeholderTextColor="#888"
-                    style={styles.Name}
-                />
-            </View>
-            <View>
-                <Input
-                    placeholder="Actividades y Grupos"
-                    placeholderTextColor="#888"
-                    style={styles.Name}
-                />
-            </View>
-            <View>
-                <Text>{subtitle1}</Text>
-            </View>
-        </View>
+    const renderItem = ({ item }) => (
+        <TouchableOpacity 
+            onPress={() => selectItem(item)}
+            style={styles.inputText}
+            >
+            <UniItemC item={item}/>
+        </TouchableOpacity>
     )
 
+    useEffect(() => { 
+        getUser().then(res => setUser(res)); 
+    }, []); 
+    
     return (
-        <View >
-            <View  >
-                <Component style={styles.textInput}
-                    action={gotoEducation}
-                    title="Educacion"
-                    action1={SaveEducation}
+        <View style={styles.container}> 
+            <DateTimePickerModal
+                isVisible={dateTimeFlag}
+                mode="date"
+                onConfirm={handlePicker}
+                onCancel={() => setDateTimeFlag(false)}
+            />
+            <SearchBar
+                arrayData={universities.data}
+                vissible={searchFlag}
+                loadingFlag={universities.flag}
+                onCancel={() => setSearchFlag(false)}
+                renderItem={renderItem}
+                searchF={value => searchUniversities(value)}
+            />
+            <View style={[ styles.viewRow, styles.header ]}>
+                <Icon
+                    onPress={() => console.log('goback()')} 
+                    name='close-outline' 
+                    color='gray' 
+                    type='ionicon' 
+                    size={30}
                 />
+                <Text style={{  fontSize: 30 }}>
+                    Qualification 
+                </Text>
+                <TouchableOpacity
+                    style={
+                        /*(post.tittle.length && (post.description.length || post.img != null))
+                        ? postStyles.saveButton
+                        :*/ [styles.saveButton, { borderColor: 'gray' }]
+                    }
+                    disabled={
+                        /*!(post.tittle.length && !loading && (post.description.length || post.img != null)) 
+                        ? true 
+                        :*/ false
+                    }
+                    onPress={handleSendbutton}
+                    >
+                    <Text 
+                        style={
+                            /*(post.tittle.length && (post.description.length || post.img != null))
+                            ? postStyles.SaveButtonText
+                            :*/ [styles.SaveButtonText, { color: 'gray' }]
+                        }
+                        >
+                        Send
+                    </Text>
+                </TouchableOpacity>
             </View>
-            <ScrollView>
-                <View>
-                    <List1
-                        title="Institucion Educativa"
-                        title1="Titulacion"
-                        title2="Disciplina Academica"
-                        title3="Fecha de inicio"
-                        title4="Fecha de fin"
-                        subtitle="fecha de graduacion previsto"
-                        subtitle1="Ejemplos:Equipo de futbol,coro"
+            <View style={styles.body}>
+                <ScrollView>  
+                    <TouchableOpacity
+                        onPress={() => setSearchFlag(true)}
+                        style={styles.inputText}
+                        >
+                        {
+                            (universities.selected != null)
+                            ? <UniItemC item={universities.selected}/>
+                            : <Text style={{ color: 'gray' }}>
+                                University... 
+                            </Text>
+                        }
+                    </TouchableOpacity>   
+                    <TouchableOpacity
+                        onPress={() => setSearchFlag(true)}
+                        style={styles.inputText}
+                        >
+                        <Text style={{ color: 'gray' }}>
+                            Start date: 
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => setSearchFlag(true)}
+                        style={styles.inputText}
+                        >
+                        <Text style={{ color: 'gray' }}>
+                            Finish date: 
+                        </Text>
+                    </TouchableOpacity> 
+                    <TextInput
+                        placeholder='Average score (optional)'  
+                        keyboardType='numeric'
+                        style={styles.inputText}
+                        onChangeText={text => setQualification({ ...qualification, averageScore: text })}
+                        //onEndEditing={() => refTextIput.focus()} 
+                        value={qualification.averageScore}
                     />
-                </View>
-            </ScrollView>
+                </ScrollView> 
+            </View>
         </View>
     )
 };
 
-export default educacion;
+export default qualification;
 
 const styles = StyleSheet.create({
-    MainContainer: {
+    container: {
         flex: 1,
-        margin: 10
-
+        backgroundColor: 'white',
     },
 
-    Header: {
+    viewRow: {
+        alignItems: "center",
+        flexDirection: 'row'
+    },
 
+    header: {
         marginTop: 24,
         backgroundColor: 'white',
         padding: '2%',
-        width: '100%',
+        width:'100%',
         justifyContent: 'space-between',
-        alignItems: "center",
-        paddingHorizontal: 10,
-        flexDirection: 'row',
-
     },
 
-    textInput: {
-        flex: 1,
-        marginTop: Platform.OS === 'ios' ? 0 : -12,
-        paddingLeft: 10,
-        color: '#05375a',
+    saveButton: {
+        padding: '2%',
+        paddingVertical: '3%',
+        borderRadius: 10,
+        borderWidth: 1,
+        paddingHorizontal: '5%',
+        borderColor: '#3465d9',  
     },
 
-    Name: {
-        backgroundColor: '#f0f0f0',
-        borderRadius: 8,
-        height: 45,
-        width: 320,
-        color: '#000',
-        paddingLeft: 18,
+    SaveButtonText: {
+        fontWeight: "bold",
+        color: '#3465d9',
     },
 
-    TextStyle: {
-        fontSize: 16,
-    }
+    body: {
+        flex:1,
+        paddingHorizontal: '3%',
+        backgroundColor: '#f4f6fc'
+    },
+
+    inputText: {
+        marginTop: 10, 
+        padding: 10, 
+        backgroundColor:'white', 
+        borderRadius: 10, 
+        color: 'gray'
+    },
 });
