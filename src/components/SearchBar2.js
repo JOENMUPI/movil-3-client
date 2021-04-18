@@ -30,7 +30,7 @@ const SearchBarC = ({ arrayData, vissible, onCancel, renderItem, searchF, loadin
                             editable={!loadingFlag}
                             autoFocus
                             placeholder={ (loadingFlag) ? prevValue : 'Write and search something!'}  
-                            style={{ color: 'gray', paddingLeft: 5 }}
+                            style={{ color: 'gray', paddingLeft: 5, width: '80%' }}
                             onChangeText={text => setValue(text)}
                             onSubmitEditing={handleSummit}
                             value={value}

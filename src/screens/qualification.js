@@ -17,8 +17,6 @@ import SearchBar from '../components/SearchBar2';
 import BasicSearchBar from '../components/SearchBar';
 import Http from '../components/Http';
 
-import * as Contacts from 'expo-contacts';
-
 
 const QUALIFICATION_BLANK = {
     averageScore: null,
@@ -43,19 +41,6 @@ const qualification = ({ navigation, route }) => {
     const [searchFlag, setSearchFlag] = useState({ basic: false, normal: false });
     const [loading, setLoading] = useState(false);
 
-    const test  = async () => {
-        const { status } = await Contacts.requestPermissionsAsync();
-        if (status === 'granted') {
-                const { data } = await Contacts.getContactsAsync({
-                fields: [Contacts.Fields.PhoneNumbers],
-            });
-
-            if (data.length > 0) {
-                const contact = data[0];
-                console.log(data);
-            }
-        }
-    }
 
     const toast = (message) => { 
         ToastAndroid.showWithGravity(
@@ -98,7 +83,7 @@ const qualification = ({ navigation, route }) => {
                 id: route.params.data.universityId,
                 img: route.params.data.img,
                 description: route.params.data.universityDescription,
-                name: universityName
+                name: route.params.data.universityName
             }
 
             const qualificationAux = {
@@ -115,8 +100,8 @@ const qualification = ({ navigation, route }) => {
             });
 
             setUniversities({ ...universities, selected: uni });
-            setQualifications({ ...qualifications, selected: qualificationAux });
-            getQualifications(uni.id);
+            setQualifications({ ...qualifications, selected: qualificationAux }); 
+            getQualifications(uni.id, qualificationAux);
         }
     }
 
@@ -131,8 +116,24 @@ const qualification = ({ navigation, route }) => {
         } else { 
             switch(data.typeResponse) {
                 case 'Success':
-                    toast(data.message); 
-                    console.log('res', data.body);
+                    toast(data.message);
+                    const aux = {
+                        universityId: universities.selected.id,
+                        img: universities.selected.img,
+                        universityDescription: universities.selected.description,
+                        universityName:  universities.selected.name,
+                        qualificationId: qualifications.selected.id,
+                        qualificationName: qualifications.selected.tittle,
+                        dateInit: qualification.dateInit,
+                        dateEnd: qualification.dateEnd,
+                        averageScore: qualification.averageScore
+                    }
+
+                    (route.params.data) 
+                    ? route.params.callBack('update', aux)
+                    : route.params.callBack('create', aux);
+                    
+                    navigation.goBack();
                     break;
 
                 case 'Fail':
@@ -181,12 +182,17 @@ const qualification = ({ navigation, route }) => {
         setUniversities({ ...universities, data: aux, flag: false });
     }
 
-    const getQualifications = async (id) => {
+    const getQualifications = async (id, updateMode) => {
         setQualifications({ ...qualifications, flag: true });
         const token = await AsyncStorage.getItem('token'); 
         const data = await Http.send('GET', `university/qualification/${id}`, null, token); 
         let aux = [];
-        
+        let selected = null
+
+        if(updateMode) {
+            selected = updateMode;
+        }
+
         if(!data) {
             Alert.alert('Fatal Error', 'No data from server...');
             
@@ -209,7 +215,8 @@ const qualification = ({ navigation, route }) => {
             }
         }
 
-        setQualifications({ ...qualifications, data: aux, flag: false }); 
+
+        setQualifications({ data: aux, flag: false, selected }); 
     }
 
     const UniItemC = ({ item }) => (
@@ -331,14 +338,18 @@ const qualification = ({ navigation, route }) => {
                                     || qualification.dateEnd != route.params.data.dateEnd
                                     || qualification.averageScore != route.params.data.averageScore 
                                 ) 
-                                ? styles.saveButton
-                                : [styles.saveButton, { borderColor: 'gray' }]
+                                ? styles.SaveButtonText
+                                : [styles.SaveButtonText, { borderColor: 'gray' }]
                                 : (qualification.universityId > 0 && qualification.qualificationId > 0 && qualification.dateInit != null)
                                 ? styles.SaveButtonText
                                 : [styles.SaveButtonText, { color: 'gray' }]
                             }
                             >
-                            Send
+                            {
+                                (route.params.data)
+                                ? 'Edit'
+                                : 'Send'
+                            }
                         </Text>
                     }
                 </TouchableOpacity>
@@ -360,9 +371,8 @@ const qualification = ({ navigation, route }) => {
                     {
                         (qualifications.flag && universities.selected != null) 
                         ? <ActivityIndicator size="small" color="#00ff00" />
-                        : (!qualifications.data.length)
-                        ? null
-                        : <TouchableOpacity
+                        : (qualifications.data.length || qualifications.selected != null)
+                        ? <TouchableOpacity
                             onPress={() => setSearchFlag({ ...searchFlag, basic: true })}
                             style={styles.inputText}
                             >
@@ -370,6 +380,7 @@ const qualification = ({ navigation, route }) => {
                                 qualifications: {(qualifications.selected != null) ? qualifications.selected.tittle : null} 
                             </Text>
                         </TouchableOpacity>
+                        : null
                     }
                     <TouchableOpacity
                         onPress={() => setDateTimeFlag({ flag: true, dateFocus: false })}
@@ -377,11 +388,11 @@ const qualification = ({ navigation, route }) => {
                         >
                         <Text style={{ color: 'gray' }}>
                             Start date: {
-                                (route.params.data)
+                                (qualification.dateInit == null)
+                                ? null
+                                : (qualification.dateInit.toString().indexOf('Z') != -1)
                                 ? qualification.dateInit.toString().split('T')[0]
-                                : (qualification.dateInit != null) 
-                                ? qualification.dateInit.toString().split(' ').splice(1,3).join('-')
-                                : null
+                                : qualification.dateInit.toString().split(' ').splice(1,3).join('-')
                             }
                         </Text>
                     </TouchableOpacity>
@@ -390,10 +401,10 @@ const qualification = ({ navigation, route }) => {
                         style={styles.inputText}
                         >
                         <Text style={{ color: 'gray' }}>
-                            Finish date: {
+                            Finish date: { 
                                 (qualification.dateEnd == null) 
                                 ? 'Actually'
-                                : (route.params.data)
+                                : (qualification.dateEnd.toString().indexOf('Z') != -1)
                                 ? qualification.dateEnd.toString().split('T')[0]
                                 : qualification.dateEnd.toString().split(' ').splice(1,3).join('-')
                             }

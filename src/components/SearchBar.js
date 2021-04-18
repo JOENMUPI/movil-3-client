@@ -44,7 +44,7 @@ const SearchBarC = ({ arrayData, vissible, onCancel, onPressItem }) => {
                 inputContainerStyle={styles.white}
                 inputStyle={styles.white}
                 containerStyle={styles.containesSearch}
-                placeholder="Write a country"
+                placeholder="Write a somethig for search"
                 onChangeText={searchItems}
                 value={value}
             />

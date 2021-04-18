@@ -23,7 +23,8 @@
     "react-native-gesture-handler": "^1.10.3",
     "react-native-modal-datetime-picker": "^9.2.0",
     "react-native-screens": "^2.18.1",
-    "react-native-web": "~0.13.12"
+    "react-native-web": "~0.13.12",
+    "expo-contacts": "~8.6.0"
   },
   "devDependencies": {
     "@babel/core": "~7.9.0"

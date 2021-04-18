@@ -50,23 +50,6 @@ const EXPERIENCE_BASE = [
     }, 
 ]
 
-const QUALIFICATION_BASE = [
-    {   
-        qualification: 'Engeneer',
-        university: 'Universidad Rafael Urdaneta',
-        dateInit: '2017',
-        dateEnd: '2020',
-        img: 'images-university',
-    },
-    {
-        qualification: 'Psicology',
-        university: 'Universidad Rafael Urdaneta',
-        dateInit: '2020',
-        dateEnd: null,
-        img: 'images-university',
-    },
-]
-
 const USER_BASE = {
     img: null,
     name: 'name',
@@ -148,14 +131,15 @@ const UserProfile = ({ navigation, route }) => {
         switch(type) {
             case 'update':
                 postAux = user.activities.map(item => {
-                    if(postid == item.id) {
-                        return item;
+                    if(postid.id == item.id) {
+                        return postid;
                     
                     } else {
-                        return taskItem;
+                        return item;
                     }
                 });
                 break;
+
             case 'delete':
                 postAux = user.activities.filter(i => i.id != postid);
                 break;
@@ -166,6 +150,34 @@ const UserProfile = ({ navigation, route }) => {
         }
 
         setUser({ ...user, activities: postAux });
+    }
+
+    const qualificationCallback = (type, data) => {
+        let qualificationAux = [];
+
+        switch(type) {
+            case 'create': 
+                qualificationAux = user.qualifications;
+                qualificationAux.unshift(data);                
+                break;
+
+            case 'update':
+                postAux = user.qualifications.map(item => {
+                    if(data.id == item.id) {
+                        return data;
+                    
+                    } else {
+                        return item;
+                    }
+                });
+                break;
+            
+            default:
+                Alert.alert('Error on type of callback');
+                break;
+        }
+
+        setUser({ ...user, qualifications: qualificationAux });
     }
 
     const getUser = async () => {   
@@ -470,12 +482,26 @@ const UserProfile = ({ navigation, route }) => {
         </Text>
     )
     
-        // aqui hay q procesar el timeStamp q le llegara...
-    const line3ExperienceQualification = (dateInit, dateEnd) => ( 
-        <Text style={userDetailStyles.text}>
-            {dateInit} - {(dateEnd != null) ? dateEnd : 'Actually'}
-        </Text>
-    )
+    const line3ExperienceQualification = (dateInit, dateEnd) => { 
+        let dateInitAux; 
+        let dateEndAux = 'Actually';
+
+        (dateInit.toString().indexOf('Z') != -1)
+        ? dateInitAux = dateInit.toString().split('T')[0]
+        : dateInitAux = dateInit.toString().split(' ').splice(1,3).join('-');
+
+        if(dateEnd != null) {
+            (dateInit.toString().indexOf('Z') != -1)
+            ? dateEndAux = dateEnd.toString().split('T')[0]
+            : dateEndAux = dateEnd.toString().split(' ').splice(1,3).join('-');
+        } 
+        
+        return (
+            <Text style={userDetailStyles.text}>
+                {dateInitAux} - {dateEndAux}
+            </Text>
+        )
+    }
 
     const SeeMoreButtonC = ({ action }) => (
         <TouchableOpacity 
@@ -803,7 +829,6 @@ const UserProfile = ({ navigation, route }) => {
         return { 
             ...userAux, 
             experiences: EXPERIENCE_BASE,
-            qualifications: QUALIFICATION_BASE
         }; 
     }
 
@@ -1047,7 +1072,17 @@ const UserProfile = ({ navigation, route }) => {
                     }
                     { 
                         (user.qualifications.length < 1)
-                        ? null
+                        ? <View style={userDetailStyles.viewList}>
+                            <Text style={userDetailStyles.tittleList}>
+                                Qualification
+                            </Text>
+                            <ListItem>
+                                <ListItemC
+                                    action={() => navigation.navigate('Qualification', { callBack: qualificationCallback.bind(this) })}
+                                    tittle='No have qualification? Write one!'
+                                />
+                            </ListItem>
+                        </View>
                         : <View style={userDetailStyles.viewList}>
                             <Text style={userDetailStyles.tittleList}>
                                 Qualifications
@@ -1059,9 +1094,10 @@ const UserProfile = ({ navigation, route }) => {
                                         bottomDivider
                                         >
                                         <ListItemWithImgC 
+                                            onPress={() => navigation.navigate('Qualification', { data: item, callBack: qualificationCallback.bind(this) })}
                                             img={item.img}
-                                            tittle={item.university}
-                                            line2={line2Qualification(item.qualification)}
+                                            tittle={item.universityName}
+                                            line2={line2Qualification(item.qualificationName)}
                                             line3={line3ExperienceQualification(item.dateInit, item.dateEnd)}
                                         />
                                     </ListItem>

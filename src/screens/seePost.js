@@ -136,6 +136,9 @@ const SeePost = ({ navigation, route }) => {
 
     const callback = (post) => {
         setPost(post);
+        if(route.params.callback) {
+            route.params.callback('update', post);
+        }
     }
 
     const deletePostAlert = () => {
