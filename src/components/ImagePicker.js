@@ -3,7 +3,7 @@ import * as ImagePicker from 'expo-image-picker';
 
 
 const getImage = async () => {  
-    let permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if(permission.status != 'granted') {
         Alert.alert(
@@ -23,7 +23,6 @@ const getImage = async () => {
         
         if(!imgResult.cancelled) { 
             return imgResult.base64;
-            setUser({ ...user, img: imgResult.base64 });
         } 
     }
 

@@ -121,427 +121,22 @@ const UserProfile = ({ navigation, route }) => {
         );
     }
 
+    const hableQualificationTOItem = (item) => {
+        setModalList({ ...modalList, flag: false });
+        navigation.navigate('Qualification', { data: item, callBack: qualificationCallback.bind(this) })
+    }
+    const hableActivityTOItem = (item) => {
+        setModalList({ ...modalList, flag: false });
+        navigation.navigate('SeePost', { user, post: item, callback: postCallback.bind(this) })
+    }
+
+    const handlePicker = (date) => { 
+        setUserJson({ ...userJson, date });
+        setDateTimeFlag(false); 
+    }
+
     const getMe = async () => {
         return JSON.parse(await AsyncStorage.getItem('user'));
-    }
-
-    const postCallback = (type, postid) => {
-        let postAux = [];
-        
-        switch(type) {
-            case 'update':
-                postAux = user.activities.map(item => {
-                    if(postid.id == item.id) {
-                        return postid;
-                    
-                    } else {
-                        return item;
-                    }
-                });
-                break;
-
-            case 'delete':
-                postAux = user.activities.filter(i => i.id != postid);
-                break;
-            
-            default:
-                Alert.alert('Error on type of callback');
-                break;
-        }
-
-        setUser({ ...user, activities: postAux });
-    }
-
-    const qualificationCallback = (type, data) => {
-        let qualificationAux = [];
-
-        switch(type) {
-            case 'create': 
-                qualificationAux = user.qualifications;
-                qualificationAux.unshift(data);                
-                break;
-
-            case 'update':
-                postAux = user.qualifications.map(item => {
-                    if(data.id == item.id) {
-                        return data;
-                    
-                    } else {
-                        return item;
-                    }
-                });
-                break;
-            
-            default:
-                Alert.alert('Error on type of callback');
-                break;
-        }
-
-        setUser({ ...user, qualifications: qualificationAux });
-    }
-
-    const getUser = async () => {   
-        setLoading({ ...loading, loading: true });
-        const userId = route.params.userId;
-        const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send('GET', `user/${userId}`, null, token);
-    
-        if(!data) {
-            Alert.alert('Fatal Error', 'No data from server...');
-            
-        } else { 
-            switch(data.typeResponse) {
-                case 'Success':
-                    toast(data.message);               
-                    return test(data.body);
-
-                case 'Fail':
-                    data.body.errors.forEach(element => {
-                        toast(element.text);
-                    });
-
-                    return {}
-                    
-                default:
-                    Alert.alert(data.typeResponse, data.message);
-                    return {}
-            }
-        } 
-    }
-
-    const getIdioms = async () => {   
-        const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send('GET', `language`, null, token);
-    
-        if(!data) {
-            Alert.alert('Fatal Error', 'No data from server...');
-            
-        } else { 
-            switch(data.typeResponse) {
-                case 'Success':
-                    toast(data.message);            
-                    let options = [];  
-                    let dataAux = []; 
-                    const cancel = {
-                        tittle: 'Cancel',
-                        icon: 'close-circle-outline',
-                        containerStyle: { backgroundColor: 'red' },
-                        style: { paddingLeft: 5, color: 'white', fontWeight: 'bold' },
-                        iconColor: 'white',
-                        onPress: () => setBottomSheetFlag({ ...bottomSheetFlag, flag: false })
-                    }  
-
-                    data.body.data.forEach(item => {
-                        dataAux.push({
-                            tittle: item.description,
-                            style: { color: 'gray' },
-                            onPress: () => {
-                                setNewLanguage(item);
-                                setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
-                            }
-                        }); 
-                    });
-                    
-                    data.body.lvl.forEach(item => { 
-                        options.push({
-                            tittle: item.description,
-                            style: { color: 'gray' },
-                            onPress: () => {
-                                setNewLvl(item);
-                                setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
-                            }
-                        }); 
-                    });
-
-                    dataAux.push(cancel);
-                    options.push(cancel);
-                    setLanguages({ ...languages, data: dataAux, options });
-                    break;
-
-                case 'Fail':
-                    data.body.errors.forEach(element => {
-                        toast(element.text);
-                    });
-                    break;
-                    
-                default:
-                    Alert.alert(data.typeResponse, data.message);
-                    break;
-            }
-        } 
-    }
-
-    const sendConnect = async () => {   
-        const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send('Post', 'connect', { userObjId: user.id }, token);
-    
-        if(!data) {
-            Alert.alert('Fatal Error', 'No data from server...');
-            
-        } else { 
-            switch(data.typeResponse) {
-                case 'Success':
-                    toast(data.message);
-                    setUser({ ...user, myConnect: true });                 
-                    break;
-
-                case 'Fail':
-                    data.body.errors.forEach(element => {
-                        toast(element.text);
-                    });
-                    break;
-                    
-                default:
-                    Alert.alert(data.typeResponse, data.message);
-                    break;
-            }
-        } 
-    }
-
-    const sendData = async (type, endpoint,body) => {
-        setLoading({ ...loading, loading: true });
-        const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send(type, endpoint, body, token);
-    
-        if(!data) {
-            Alert.alert('Fatal Error', 'No data from server...');
-
-        } else {
-            switch(data.typeResponse) {
-                case 'Success':
-                    toast(data.message);
-                    break;
-    
-                case 'Fail':
-                    data.body.errors.forEach(element => {
-                        toast(element.text);
-                    });
-                    break;
-                    
-                default:
-                    Alert.alert(data.typeResponse, data.message);
-                    break;
-            }
-        }
-        
-        setLoading({ ...loading, loading: false });
-    } 
-
-    const BottomSheetItemC = ({ item }) => ( 
-        <ListItem containerStyle={item.containerStyle} onPress={item.onPress}>
-            <ListItem.Content>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Icon
-                        name={item.icon}
-                        color={item.iconColor} 
-                        type='ionicon' 
-                        size={30}
-                    />
-                    <ListItem.Title style={item.style}>{item.tittle}</ListItem.Title>
-                </View>
-            </ListItem.Content>
-        </ListItem>
-    )
-
-    const IconOption = ({ item }) => (
-        <Icon
-            onPress={() => renderItemOptions(item)}
-            name='ellipsis-vertical'
-            color='gray'
-            type='ionicon'
-            size={30}
-        />
-    )
-
-    const renderItemSkill = ({ item }) => ( 
-        <View style={userDetailStyles.viewItem}> 
-            <View style={userDetailStyles.item}>
-                <Text style={{ fontSize: 15 }}>
-                    {item.description}
-                </Text> 
-                <IconOption item={item}/>
-            </View>
-        </View>
-    )
-
-    const renderItemAward = ({ item }) => ( 
-        <View style={userDetailStyles.viewItem}> 
-            <View style={userDetailStyles.item}>
-                <View>
-                    <Text style={{ fontSize: 15 }}>
-                        {item.description}
-                    </Text>
-                    <Text style={{ fontSize: 15, color: 'gray' }}>
-                        {item.date}
-                    </Text>
-                </View>
-                <IconOption item={item}/>
-            </View>
-        </View>
-    )
-
-    const renderItemIdiom = ({ item }) => ( 
-        <View style={userDetailStyles.viewItem}> 
-            <View style={userDetailStyles.item}>
-                <View>
-                    <Text style={{ fontSize: 15 }}>
-                        {item.name}
-                    </Text>
-                    <Text style={{ fontSize: 15, color: 'gray' }}>
-                        {item.lvl}
-                    </Text>
-                </View>
-                <IconOption item={item}/>
-            </View>
-        </View>
-    )
-
-    const ListItemWithImgC = ({ img, tittle, line2, line3, onPress }) => ( 
-        <View style={userDetailStyles.viewRow}> 
-            <ListItem.Content >
-                <TouchableOpacity
-                    onPress={onPress} 
-                    style={[userDetailStyles.viewRow, userDetailStyles.fill]}
-                    >
-                    {
-                        (img == null)
-                        ? <Avatar 
-                            rounded 
-                            source={{ uri: `data:image/png;base64,${user.img}` }}
-                            size="medium" 
-                        />
-                        : <Image
-                            source={{ uri: `data:image/png;base64,${img}` }}
-                            containerStyle={{ borderRadius: 5, width: 55, height: 55, resizeMode: 'contain', marginTop: 10 }}
-                        />
-                    }
-                    <View>
-                        <View style={userDetailStyles.viewLinesItem}>
-                            <Text style={userDetailStyles.tittleItem}>
-                                {tittle} 
-                            </Text>
-                            {line2}
-                            {line3}  
-                        </View>
-                    </View>
-                </TouchableOpacity>      
-            </ListItem.Content>
-        </View>
-    )
-
-    const line2Activity = (dateCreation, dateEdit) => (
-        <Text style={userDetailStyles.text}>
-            {
-                (dateEdit != null)
-                ? `Last edit: ${dateEdit}`
-                : dateCreation
-            }
-        </Text>
-    )
-
-    const line3Activity = (reactions, commentaries, commentFlag) => (
-        <View style={[ userDetailStyles.viewRow, { justifyContent: 'space-between' } ]}>
-            {
-                (!commentFlag)
-                ? null
-                : <View style={userDetailStyles.viewRow}>
-                    <Icon name='chatbubbles-outline' color='gray' type='ionicon' size={15} />
-                    <Text style={userDetailStyles.text}>
-                        {commentaries}
-                    </Text>
-                </View>
-            }
-            <View style={userDetailStyles.viewRow}>
-                { 
-                    reactions.map((reaction, index) => ( 
-                        !(reaction.num > 0)
-                        ? null
-                        : <View
-                            key={index} 
-                            style={userDetailStyles.viewReaction}>
-                            <Icon name={reaction.description} color='gray' type='ionicon' size={15} />
-                            <Text style={userDetailStyles.text}>
-                                {reaction.num}
-                            </Text>
-                        </View>
-                    ))
-                }
-            </View> 
-        </View>
-    )
-
-    const line2Experience = (enterprise, typeJob) => (
-        <Text style={userDetailStyles.text}>
-            {enterprise} - {typeJob}
-        </Text>
-    )
-
-    const line2Qualification = (description) => (
-        <Text style={userDetailStyles.text}>
-            {description}
-        </Text>
-    )
-    
-    const line3ExperienceQualification = (dateInit, dateEnd) => { 
-        let dateInitAux; 
-        let dateEndAux = 'Actually';
-
-        (dateInit.toString().indexOf('Z') != -1)
-        ? dateInitAux = dateInit.toString().split('T')[0]
-        : dateInitAux = dateInit.toString().split(' ').splice(1,3).join('-');
-
-        if(dateEnd != null) {
-            (dateInit.toString().indexOf('Z') != -1)
-            ? dateEndAux = dateEnd.toString().split('T')[0]
-            : dateEndAux = dateEnd.toString().split(' ').splice(1,3).join('-');
-        } 
-        
-        return (
-            <Text style={userDetailStyles.text}>
-                {dateInitAux} - {dateEndAux}
-            </Text>
-        )
-    }
-
-    const SeeMoreButtonC = ({ action }) => (
-        <TouchableOpacity 
-            onPress={action}
-            style={userDetailStyles.buttonSee}
-            >
-            <Text style={userDetailStyles.buttonSeeText}>
-                See more
-            </Text>
-        </TouchableOpacity>
-    )
-
-    const ListItemC = ({ tittle, line2, action }) => (
-        <TouchableOpacity
-            style={userDetailStyles.fill}
-            onPress={action}
-            >
-            <Text style={userDetailStyles.tittleItem}>
-                {tittle}
-            </Text>
-            {line2}
-        </TouchableOpacity>
-    )
-
-    const line2IdiomAward = (text) => (
-        <Text style={userDetailStyles.text}>
-            {text}
-        </Text>
-    )
-
-    const gotoUserActivities = () => {
-        console.log('hi activities');
-    }
-
-    const gotoUserExperiences = () => {
-        console.log('hi experiences');
-    }
-
-    const gotoUserQualifications = () => {
-        console.log('hi qualifications');
     }
 
     const handleAddPress = () => { 
@@ -562,6 +157,16 @@ const UserProfile = ({ navigation, route }) => {
 
             case 'Interests':
                 setModal({ type: 'interest', flag: true, editFlag: false });
+                break;
+
+            case 'Qualifications':
+                setModalList({ ...modalList, flag: false });
+                navigation.navigate('Qualification', { callBack: qualificationCallback.bind(this) });
+                break;
+
+            case 'Activities':
+                setModalList({ ...modalList, flag: false });
+                navigation.navigate('Post', { callback: postCallback.bind(this) });
                 break;
 
             default:
@@ -730,6 +335,18 @@ const UserProfile = ({ navigation, route }) => {
         sendData('PUT', 'user/field/interest', { data: interest });
     }
 
+    const deleteAlert = (pressOk, tittle) => {
+        setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
+        Alert.alert(
+            'Waring', 
+            `Are you sure delete ${tittle}?`,
+            [
+                { text: "Cancel", style: "cancel" }, 
+                { text: "OK", onPress: pressOk }
+            ], { cancelable: false }
+        );
+    }
+
     const renderItemOptions = (item) => {
         let bsoAux = BSO_BLANK;
         
@@ -814,6 +431,520 @@ const UserProfile = ({ navigation, route }) => {
         });
     }
 
+    const postCallback = (type, postid) => {
+        let postAux = [];
+        
+        switch(type) {
+            case 'create': 
+                postAux = user.activities; 
+                postAux.unshift(postid);                
+                break;
+
+            case 'update':
+                postAux = user.activities.map(item => {
+                    if(postid.id == item.id) {
+                        return postid;
+                    
+                    } else {
+                        return item;
+                    }
+                });
+                break;
+
+            case 'delete':
+                postAux = user.activities.filter(i => i.id != postid);
+                break;
+            
+            default:
+                Alert.alert('Error on type of callback');
+                break;
+        }
+
+        setUser({ ...user, activities: postAux });
+    }
+
+    const qualificationCallback = (type, data) => {
+        let qualificationAux = [];
+
+        switch(type) {
+            case 'create': 
+                qualificationAux = user.qualifications;
+                qualificationAux.unshift(data);                
+                break;
+
+            case 'update':
+                qualificationAux = user.qualifications.map(item => {
+                    if(data.ref1 == item.universityId && data.ref2 == item.qualificationId) {
+                        return data;
+                    
+                    } else {
+                        return item;
+                    }
+                });
+                break;
+            
+            default:
+                Alert.alert('Error on type of callback');
+                break;
+        }
+
+        setUser({ ...user, qualifications: qualificationAux });
+    }
+
+    const getUser = async () => {   
+        setLoading({ ...loading, loading: true });
+        const userId = route.params.userId;
+        const token = await AsyncStorage.getItem('token'); 
+        const data = await Http.send('GET', `user/${userId}`, null, token);
+    
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+            
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success':
+                    toast(data.message);               
+                    return test(data.body);
+
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+
+                    return {}
+                    
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    return {}
+            }
+        } 
+    }
+
+    const getIdioms = async () => {   
+        const token = await AsyncStorage.getItem('token'); 
+        const data = await Http.send('GET', `language`, null, token);
+    
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+            
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success':
+                    toast(data.message);            
+                    let options = [];  
+                    let dataAux = []; 
+                    const cancel = {
+                        tittle: 'Cancel',
+                        icon: 'close-circle-outline',
+                        containerStyle: { backgroundColor: 'red' },
+                        style: { paddingLeft: 5, color: 'white', fontWeight: 'bold' },
+                        iconColor: 'white',
+                        onPress: () => setBottomSheetFlag({ ...bottomSheetFlag, flag: false })
+                    }  
+
+                    data.body.data.forEach(item => {
+                        dataAux.push({
+                            tittle: item.description,
+                            style: { color: 'gray' },
+                            onPress: () => {
+                                setNewLanguage(item);
+                                setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
+                            }
+                        }); 
+                    });
+                    
+                    data.body.lvl.forEach(item => { 
+                        options.push({
+                            tittle: item.description,
+                            style: { color: 'gray' },
+                            onPress: () => {
+                                setNewLvl(item);
+                                setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
+                            }
+                        }); 
+                    });
+
+                    dataAux.push(cancel);
+                    options.push(cancel);
+                    setLanguages({ ...languages, data: dataAux, options });
+                    break;
+
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+                    
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        } 
+    }
+
+    const sendConnect = async () => {   
+        const token = await AsyncStorage.getItem('token'); 
+        const data = await Http.send('Post', 'connect', { userObjId: user.id }, token);
+    
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+            
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success':
+                    toast(data.message);
+                    setUser({ ...user, myConnect: true });                 
+                    break;
+
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+                    
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        } 
+    }
+
+    const deleteQualification = async (item) => {      
+        const token = await AsyncStorage.getItem('token'); 
+        const data = await Http.send('DELETE', `qualification/user/${item.qualificationId}/${item.universityId}`, null, token);
+        
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success': 
+                    toast(data.message);  
+                    let newQualifications = user.qualifications.filter(i => 
+                        i.universityId != item.universityId && i.qualificationId != item.qualificationId
+                    );
+                    
+                    setUser({ ...user, qualifications: newQualifications });
+                    break;
+            
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        }
+    }
+
+    const sendData = async (type, endpoint,body) => {
+        setLoading({ ...loading, loading: true });
+        const token = await AsyncStorage.getItem('token'); 
+        const data = await Http.send(type, endpoint, body, token);
+    
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+
+        } else {
+            switch(data.typeResponse) {
+                case 'Success':
+                    toast(data.message);
+                    break;
+    
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+                    
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        }
+        
+        setLoading({ ...loading, loading: false });
+    } 
+
+    const BottomSheetItemC = ({ item }) => ( 
+        <ListItem containerStyle={item.containerStyle} onPress={item.onPress}>
+            <ListItem.Content>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Icon
+                        name={item.icon}
+                        color={item.iconColor} 
+                        type='ionicon' 
+                        size={30}
+                    />
+                    <ListItem.Title style={item.style}>{item.tittle}</ListItem.Title>
+                </View>
+            </ListItem.Content>
+        </ListItem>
+    )
+
+    const IconOption = ({ item }) => (
+        <Icon
+            onPress={() => renderItemOptions(item)}
+            name='ellipsis-vertical'
+            color='gray'
+            type='ionicon'
+            size={30}
+        />
+    )
+
+    const renderItemSkill = ({ item }) => ( 
+        <View style={userDetailStyles.viewItem}> 
+            <View style={userDetailStyles.item}>
+                <Text style={{ fontSize: 15 }}>
+                    {item.description}
+                </Text> 
+                <IconOption item={item}/>
+            </View>
+        </View>
+    )
+
+    const renderItemAward = ({ item }) => ( 
+        <View style={userDetailStyles.viewItem}> 
+            <View style={userDetailStyles.item}>
+                <View>
+                    <Text style={{ fontSize: 15 }}>
+                        {item.description}
+                    </Text>
+                    <Text style={{ fontSize: 15, color: 'gray' }}>
+                        {item.date}
+                    </Text>
+                </View>
+                <IconOption item={item}/>
+            </View>
+        </View>
+    )
+
+    const renderItemIdiom = ({ item }) => ( 
+        <View style={userDetailStyles.viewItem}> 
+            <View style={userDetailStyles.item}>
+                <View>
+                    <Text style={{ fontSize: 15 }}>
+                        {item.name}
+                    </Text>
+                    <Text style={{ fontSize: 15, color: 'gray' }}>
+                        {item.lvl}
+                    </Text>
+                </View>
+                <IconOption item={item}/>
+            </View>
+        </View>
+    )
+
+    const renderItemQualification = ({ item }) => ( 
+        <View style={userDetailStyles.viewItem}> 
+            <View style={userDetailStyles.item}>
+                <TouchableOpacity
+                    onPress={() => hableQualificationTOItem(item)} 
+                    style={[userDetailStyles.viewRow, { width: '80%' }]}
+                    >
+                    {
+                        (item.img == null)
+                        ? <Avatar 
+                            rounded
+                            size="medium"
+                            containerStyle={{ backgroundColor: 'lightgray' }}
+                            icon={{ name: 'camera-outline', color: 'white', type: 'ionicon', size: 40 }} 
+                        />
+                        : <Avatar 
+                            rounded 
+                            source={{ uri: `data:image/png;base64,${item.img}` }}
+                            size="medium" 
+                        /> 
+                    }
+                    <View style={userDetailStyles.viewLinesItem}>
+                        <Text style={userDetailStyles.tittleItem}>
+                            {item.universityName} 
+                        </Text>
+                        {line2Qualification(item.qualificationName)}
+                        {line3ExperienceQualification(item.dateInit, item.dateEnd)}  
+                    </View>
+                </TouchableOpacity>
+                <Icon
+                    onPress={() => deleteAlert(() => deleteQualification(item), 'this qualification?')}
+                    name='trash-outline'
+                    color='gray'
+                    type='ionicon'
+                    size={30}
+                />
+            </View>
+        </View>
+    )
+
+    const renderItemActivities = ({ item }) => ( 
+        <View style={userDetailStyles.viewItem}> 
+            <View style={userDetailStyles.item}>
+                <TouchableOpacity
+                    onPress={() => hableActivityTOItem(item)} 
+                    style={[userDetailStyles.viewRow, userDetailStyles.fill]}
+                    >
+                    {
+                        (item.img == null)
+                        ? <Avatar 
+                            rounded 
+                            source={{ uri: `data:image/png;base64,${user.img}` }}
+                            size="medium" 
+                        />
+                        : <Image
+                            source={{ uri: `data:image/png;base64,${item.img}` }}
+                            containerStyle={{ borderRadius: 5, width: 55, height: 55, resizeMode: 'contain', marginTop: 10 }}
+                        />
+                    }
+                    <View style={userDetailStyles.viewLinesItem}>
+                        <Text style={userDetailStyles.tittleItem}>
+                            {item.tittle} 
+                        </Text>
+                        {line2Activity(item.dateCreation, item.dateEdit)}
+                        {line3Activity(item.reactions, item.commentaries, item.commentFlag)}  
+                    </View>
+                </TouchableOpacity>
+            </View>
+        </View>
+    )
+
+    const ListItemWithImgC = ({ img, tittle, line2, line3, onPress }) => ( 
+        <View style={userDetailStyles.viewRow}> 
+            <ListItem.Content >
+                <TouchableOpacity
+                    onPress={onPress} 
+                    style={[userDetailStyles.viewRow, userDetailStyles.fill]}
+                    >
+                    {
+                        (img == null)
+                        ? <Avatar 
+                            rounded 
+                            source={{ uri: `data:image/png;base64,${user.img}` }}
+                            size="medium" 
+                        />
+                        : <Image
+                            source={{ uri: `data:image/png;base64,${img}` }}
+                            containerStyle={{ borderRadius: 5, width: 55, height: 55, resizeMode: 'contain', marginTop: 10 }}
+                        />
+                    }
+                    <View>
+                        <View style={userDetailStyles.viewLinesItem}>
+                            <Text style={userDetailStyles.tittleItem}>
+                                {tittle} 
+                            </Text>
+                            {line2}
+                            {line3}  
+                        </View>
+                    </View>
+                </TouchableOpacity>      
+            </ListItem.Content>
+        </View>
+    )
+
+    const line2Activity = (dateCreation, dateEdit) => (
+        <Text style={userDetailStyles.text}>
+            {
+                (dateEdit != null)
+                ? `Last edit: ${dateEdit}`
+                : dateCreation
+            }
+        </Text>
+    )
+
+    const line3Activity = (reactions, commentaries, commentFlag) => (
+        <View style={[ userDetailStyles.viewRow, { justifyContent: 'space-between' } ]}>
+            {
+                (!commentFlag)
+                ? null
+                : <View style={userDetailStyles.viewRow}>
+                    <Icon name='chatbubbles-outline' color='gray' type='ionicon' size={15} />
+                    <Text style={userDetailStyles.text}>
+                        {commentaries}
+                    </Text>
+                </View>
+            }
+            <View style={userDetailStyles.viewRow}>
+                { 
+                    reactions.map((reaction, index) => ( 
+                        !(reaction.num > 0)
+                        ? null
+                        : <View
+                            key={index} 
+                            style={userDetailStyles.viewReaction}>
+                            <Icon name={reaction.description} color='gray' type='ionicon' size={15} />
+                            <Text style={userDetailStyles.text}>
+                                {reaction.num}
+                            </Text>
+                        </View>
+                    ))
+                }
+            </View> 
+        </View>
+    )
+
+    const line2Experience = (enterprise, typeJob) => (
+        <Text style={userDetailStyles.text}>
+            {enterprise} - {typeJob}
+        </Text>
+    )
+
+    const line2Qualification = (description) => (
+        <Text style={{ color: 'gray', width: '80%' }}>
+            {description}
+        </Text>
+    )
+    
+    const line3ExperienceQualification = (dateInit, dateEnd) => { 
+        let dateInitAux; 
+        let dateEndAux = 'Actually';
+
+        (dateInit.toString().indexOf('Z') != -1)
+        ? dateInitAux = dateInit.toString().split('T')[0]
+        : dateInitAux = dateInit.toString().split(' ').splice(1,3).join('-');
+
+        if(dateEnd != null) {
+            (dateInit.toString().indexOf('Z') != -1)
+            ? dateEndAux = dateEnd.toString().split('T')[0]
+            : dateEndAux = dateEnd.toString().split(' ').splice(1,3).join('-');
+        } 
+        
+        return (
+            <Text style={userDetailStyles.text}>
+                {dateInitAux} - {dateEndAux}
+            </Text>
+        )
+    }
+
+    const SeeMoreButtonC = ({ action }) => (
+        <TouchableOpacity 
+            onPress={action}
+            style={userDetailStyles.buttonSee}
+            >
+            <Text style={userDetailStyles.buttonSeeText}>
+                See more
+            </Text>
+        </TouchableOpacity>
+    )
+
+    const ListItemC = ({ tittle, line2, action }) => (
+        <TouchableOpacity
+            style={userDetailStyles.fill}
+            onPress={action}
+            >
+            <Text style={userDetailStyles.tittleItem}>
+                {tittle}
+            </Text>
+            {line2}
+        </TouchableOpacity>
+    )
+
+    const line2IdiomAward = (text) => (
+        <Text style={userDetailStyles.text}>
+            {text}
+        </Text>
+    )
+
     useEffect(() => { 
         getMe().then(res => { 
             setMe(res);
@@ -830,11 +961,6 @@ const UserProfile = ({ navigation, route }) => {
             ...userAux, 
             experiences: EXPERIENCE_BASE,
         }; 
-    }
-
-    const handlePicker = (date) => { 
-        setUserJson({ ...userJson, date });
-        setDateTimeFlag(false); 
     }
 
     
@@ -949,6 +1075,10 @@ const UserProfile = ({ navigation, route }) => {
                     ? renderItemAward
                     : (modalList.tittle == 'Idioms')
                     ? renderItemIdiom
+                    : (modalList.tittle == 'Qualifications')
+                    ? renderItemQualification
+                    : (modalList.tittle == 'Activities')
+                    ? renderItemActivities
                     : null
                 }
                 
@@ -961,6 +1091,10 @@ const UserProfile = ({ navigation, route }) => {
                     ? user.awards
                     : (modalList.tittle == 'Idioms')
                     ? user.idioms
+                    : (modalList.tittle == 'Qualifications')
+                    ? user.qualifications
+                    : (modalList.tittle == 'Activities')
+                    ? user.activities
                     : []
                 }
             />
@@ -1043,8 +1177,18 @@ const UserProfile = ({ navigation, route }) => {
                         </View>
                     }
                     {
-                        (user.activities.length < 1) 
-                        ? null
+                        (user.id == me.id && user.activities.length < 1) 
+                        ? <View style={userDetailStyles.viewList}>
+                            <Text style={userDetailStyles.tittleList}>
+                                Activities
+                            </Text>
+                            <ListItem>
+                                <ListItemC
+                                    action={() => navigation.navigate('Post', { callback: postCallback.bind(this) })}
+                                    tittle='No have a posts? Write one!'
+                                />
+                            </ListItem>
+                        </View>
                         : <View style={userDetailStyles.viewList}>
                             <Text style={userDetailStyles.tittleList}>
                                 Activities
@@ -1066,12 +1210,12 @@ const UserProfile = ({ navigation, route }) => {
                                 ))
                             }
                             <SeeMoreButtonC
-                                action={gotoUserActivities}
+                                action={() => setModalList({ flag: true, tittle: 'Activities' })}
                             />
                         </View>
                     }
                     { 
-                        (user.qualifications.length < 1)
+                        (user.id == me.id && user.qualifications.length < 1)
                         ? <View style={userDetailStyles.viewList}>
                             <Text style={userDetailStyles.tittleList}>
                                 Qualification
@@ -1104,7 +1248,7 @@ const UserProfile = ({ navigation, route }) => {
                                 ))
                             }
                             <SeeMoreButtonC
-                                action={gotoUserQualifications}
+                                action={() => setModalList({ flag: true, tittle: 'Qualifications' })}
                             />
                         </View> 
                     } 
@@ -1131,7 +1275,7 @@ const UserProfile = ({ navigation, route }) => {
                                 ))
                             }
                             <SeeMoreButtonC
-                                action={gotoUserExperiences}
+                                action={() => setModalList({ flag: true, tittle: 'Experiences' })}
                             />
                         </View> 
                     }

@@ -105,19 +105,29 @@ const qualification = ({ navigation, route }) => {
         }
     }
 
-    const sendQualification = async (type) => {
+    const sendQualification = async (type) => { 
         setLoading(true);
-        const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send(type, 'qualification/user', qualification, token); 
+        const token = await AsyncStorage.getItem('token');
+        let jsonAux = {};
+
+        (type == 'POST')
+        ? jsonAux = qualification
+        : jsonAux = { 
+            ...qualification, 
+            oldUniversityId: route.params.data.universityId,
+            oldQualificationId: route.params.data.qualificationId 
+        }
+        
+        const data = await Http.send(type, 'qualification/user', jsonAux, token); 
         
         if(!data) {
             Alert.alert('Fatal Error', 'No data from server...');
             
         } else { 
             switch(data.typeResponse) {
-                case 'Success':
+                case 'Success': 
                     toast(data.message);
-                    const aux = {
+                    let aux = {
                         universityId: universities.selected.id,
                         img: universities.selected.img,
                         universityDescription: universities.selected.description,
@@ -126,10 +136,18 @@ const qualification = ({ navigation, route }) => {
                         qualificationName: qualifications.selected.tittle,
                         dateInit: qualification.dateInit,
                         dateEnd: qualification.dateEnd,
-                        averageScore: qualification.averageScore
+                        averageScore: qualification.averageScore,
                     }
 
-                    (route.params.data) 
+                    if(route.params.data) {
+                        aux = { 
+                            ...aux, 
+                            ref1: route.params.data.universityId,
+                            ref2: route.params.data.qualificationId 
+                        };
+                    }
+
+                    (type != 'POST') 
                     ? route.params.callBack('update', aux)
                     : route.params.callBack('create', aux);
                     
@@ -339,7 +357,7 @@ const qualification = ({ navigation, route }) => {
                                     || qualification.averageScore != route.params.data.averageScore 
                                 ) 
                                 ? styles.SaveButtonText
-                                : [styles.SaveButtonText, { borderColor: 'gray' }]
+                                : [styles.SaveButtonText, { color: 'gray' }]
                                 : (qualification.universityId > 0 && qualification.qualificationId > 0 && qualification.dateInit != null)
                                 ? styles.SaveButtonText
                                 : [styles.SaveButtonText, { color: 'gray' }]

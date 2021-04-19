@@ -44,7 +44,7 @@ const SeePost = ({ navigation, route }) => {
     const [commentaries, setCommentaries] = useState({ flag: false, data: [] });
     const [bottomSheetFlag, setBottomSheetFlag] = useState({ type: '', flag: false });
     const [modal, setModal] = useState(MODAL_BLANK); 
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState({ flag: false, first: true });
 
     let commentInput = '';
 
@@ -134,7 +134,7 @@ const SeePost = ({ navigation, route }) => {
         }
     }
 
-    const callback = (post) => {
+    const callback = (type, post) => {
         setPost(post);
         if(route.params.callback) {
             route.params.callback('update', post);
@@ -450,11 +450,11 @@ const SeePost = ({ navigation, route }) => {
 
     const refresh = () => {
         if(post.commentFlag) {
-            setLoading(true);
+            setLoading({ ...loading, flag: true });
             getComments().then(res => { 
                 setPost({ ... post, commentaries: res.data.length });
                 setCommentaries(res);
-                setLoading(false);
+                setLoading({ flag: false, first: false });
             });
         }
     }
@@ -519,7 +519,7 @@ const SeePost = ({ navigation, route }) => {
                 <ScrollView
                     refreshControl={
                         <RefreshControl
-                            refreshing={loading}
+                            refreshing={(loading.flag && !loading.first)}
                             onRefresh={refresh}
                         />
                     }

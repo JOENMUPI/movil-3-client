@@ -7,7 +7,8 @@ import {
     ToastAndroid,
     StyleSheet,
     Alert,
-    ActivityIndicator
+    ActivityIndicator,
+    RefreshControl
 } from "react-native";
 import { Avatar, Icon, ListItem } from 'react-native-elements';
 import AsyncStorage from '@react-native-community/async-storage';
@@ -18,7 +19,7 @@ import ModalListC from '../components/modalList';
 const Connect = ({ navigation, route }) => {
     const [connect, setConnect] = useState({ petitions: [], connect: [] });
     const [modalList, setModalList] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState({ flag: false, first: true });
 
     const toast = (message) => { 
         ToastAndroid.showWithGravity(
@@ -26,6 +27,13 @@ const Connect = ({ navigation, route }) => {
             ToastAndroid.SHORT,
             ToastAndroid.TOP
         );
+    }
+
+    const refresh = () => {
+        getConnects().then(res => {
+            setConnect(res);
+            setLoading({ first: false, flag: false });
+        });
     }
 
     const deleteConnectAlert = (item) => {
@@ -40,7 +48,7 @@ const Connect = ({ navigation, route }) => {
     }
 
     const getConnects = async () => {   
-        setLoading(true)
+        setLoading({ ...loading, flag: true })
         const token = await AsyncStorage.getItem('token'); 
         const me = JSON.parse(await AsyncStorage.getItem('user'));
         const data = await Http.send('GET', 'connect', null, token);
@@ -198,10 +206,7 @@ const Connect = ({ navigation, route }) => {
     )
 
     useEffect(() => { 
-        getConnects().then(res => {
-            setConnect(res);
-            setLoading(false);
-        });
+        refresh();
     }, []);
 
     return (
@@ -214,35 +219,30 @@ const Connect = ({ navigation, route }) => {
                 data={connect.connect}
                 renderItem={renderItemConnect}
             />
-            <ScrollView>
+            <ScrollView
+                refreshControl={
+                    <RefreshControl
+                        refreshing={loading.flag && !loading.first}
+                        onRefresh={refresh}
+                    />
+                }
+                >
                 <ButtonOptionC
                     onPress={() => setModalList(true)}
                     tittle='Connects'
                 />
                 <ButtonOptionC
-                    onPress={() => console.log('perra')}
+                    onPress={() => navigation.navigate('Contact')}
                     tittle='contact (working...)'
                 />
                 <View style={styles.viewList}>
-                    <View style={[ styles.viewRow, { justifyContent: 'space-between', paddingEnd: '3%' }]}>
+                    <View style={{ justifyContent: 'space-between', paddingEnd: '3%' }}>
                         <Text style={[styles.tittleList]}>
                             request connect
                         </Text>
-                        <Icon
-                            onPress={() => 
-                                getConnects().then(res => {
-                                    setConnect(res);
-                                    setLoading(false);
-                                })
-                            }
-                            name='refresh-outline'
-                            color='gray' 
-                            type='ionicon' 
-                            size={20}
-                        />
                     </View>
                     {
-                        (loading)
+                        (loading.flag)
                         ? <ActivityIndicator size="large" color="#00ff00" />
                         : (connect.petitions.length < 1)
                         ? <View style={styles.modal}>

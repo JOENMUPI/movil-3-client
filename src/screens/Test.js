@@ -1,475 +1,150 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import {
     View,
-    Text,
-    TouchableOpacity,
-    ScrollView,
-    TextInput,
-    ToastAndroid,
-    ActivityIndicator,
-    StyleSheet,
+    Text, TextInput,
+
+    StyleSheet
 } from "react-native";
-import { Icon, Avatar } from 'react-native-elements'
-import AsyncStorage from '@react-native-community/async-storage';
-import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { Icon, Avatar, Button } from 'react-native-elements'
+import { ScrollView } from 'react-native-gesture-handler';
 
-import SearchBar from '../components/SearchBar2';
-import BasicSearchBar from '../components/SearchBar';
-import Http from '../components/Http';
-
-import * as Contacts from 'expo-contacts';
-
-
-const QUALIFICATION_BLANK = {
-    averageScore: null,
-    dateInit: null,
-    dateEnd: null,
-    qualificationId: 0,
-    universityId: 0, 
-}
-
-const GENERIC_ARK = { 
-    data: [], 
-    flag: false, 
-    selected: null
-}
-
-
-const qualification = ({ navigation, route }) => {
-    const [universities, setUniversities] = useState(GENERIC_ARK);
-    const [qualifications, setQualifications] = useState(GENERIC_ARK);
-    const [qualification, setQualification] = useState(QUALIFICATION_BLANK);
-    const [dateTimeFlag, setDateTimeFlag] = useState({ flag: false, dateFocus: false });
-    const [searchFlag, setSearchFlag] = useState({ basic: false, normal: false });
-    const [loading, setLoading] = useState(false);
-
-    const test  = async () => {
-        const { status } = await Contacts.requestPermissionsAsync();
-        if (status === 'granted') {
-                const { data } = await Contacts.getContactsAsync({
-                fields: [Contacts.Fields.PhoneNumbers],
-            });
-
-            if (data.length > 0) {
-                const contact = data[0];
-                console.log(data);
-            }
-        }
+const Company = () => {
+    const gotoCompany = () => {
+        console.log('Delete Company');
+    }
+    const saveCompany = () => {
+        console.log('Save Company');
+    }
+    const image = () => {
+        console.log('Modificate Imagen');
     }
 
-    const toast = (message) => { 
-        ToastAndroid.showWithGravity(
-            message,
-            ToastAndroid.SHORT,
-            ToastAndroid.TOP
-        );
-    }
+    const [vissiblePassFlag] = useState(false);
+    const Component = ({ title, action, action1 }) => (
+        <View style={styles.Header}  >
+            <Icon
+                name='close-outline'
+                color='gray'
+                type='ionicon'
+                size={30}
+                checked={vissiblePassFlag}
+                onPress={action}
+            />
 
-    const handleSendbutton = () => { 
-        (route.params.data) 
-        ? sendQualification('PUT')
-        : sendQualification('POST'); 
-    }
+            <Text style={{ fontSize: 30 }}>
+                {title}
+            </Text>
+            <Button style={styles.saveButton}
+                title="Save"
+                type="outline"
+                size={30}
+                checked={vissiblePassFlag}
+                onPress={action1}
+            />
 
-    const handlePicker = (date) => { 
-        (dateTimeFlag.dateFocus)
-        ? setQualification({ ...qualification, dateEnd: date })
-        : setQualification({ ...qualification, dateInit: date })
-        
-        setDateTimeFlag({ ...dateTimeFlag, flag: false }); 
-    }
+        </View>
 
-    const onPressItemSearchBar = (item) => {
-        setSearchFlag({ ...searchFlag, basic: false });
-        setQualification({ ...qualification, qualificationId: item.id });
-        setQualifications({ ...qualifications, selected: item }); 
-    }
+    )
 
-    const selectItem = (item) => {
-        setSearchFlag({ ...searchFlag, normal: false });
-        setQualification({ ...qualification, universityId: item.id });
-        setUniversities({ ...universities, selected: item });
-        getQualifications(item.id);
-    }
-
-    const modeEdit = () => {
-        if (route.params.data) {
-            const uni = {
-                id: route.params.data.universityId,
-                img: route.params.data.img,
-                description: route.params.data.universityDescription,
-                name: universityName
-            }
-
-            const qualificationAux = {
-                id: route.params.data.qualificationId,
-                tittle: route.params.data.qualificationName,
-            }
-
-            setQualification({
-                universityId: uni.id,
-                qualificationId: qualificationAux.id,
-                dateInit: route.params.data.dateInit,
-                dateEnd: route.params.data.dateEnd,
-                averageScore: route.params.data.averageScore
-            });
-
-            setUniversities({ ...universities, selected: uni });
-            setQualifications({ ...qualifications, selected: qualificationAux });
-            getQualifications(uni.id);
-        }
-    }
-
-    const sendQualification = async (type) => {
-        setLoading(true);
-        const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send(type, 'qualification/user', qualification, token); 
-        
-        if(!data) {
-            Alert.alert('Fatal Error', 'No data from server...');
-            
-        } else { 
-            switch(data.typeResponse) {
-                case 'Success':
-                    toast(data.message); 
-                    console.log('res', data.body);
-                    break;
-
-                case 'Fail':
-                    data.body.errors.forEach(element => {
-                        toast(element.text);
-                    });
-                    break;
-                    
-                default:
-                    Alert.alert(data.typeResponse, data.message);
-                    break;
-            }
-        }
-
-        setLoading(false);
-    }
-
-    const searchUniversities = async (value) => {
-        setUniversities({ ...universities, flag: true });
-        const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send('GET', `university/search/${value}`, null, token); 
-        let aux = [];
-        
-        if(!data) {
-            Alert.alert('Fatal Error', 'No data from server...');
-            
-        } else { 
-            switch(data.typeResponse) {
-                case 'Success':
-                    toast(data.message); 
-                    aux = data.body;
-                    break;
-
-                case 'Fail':
-                    data.body.errors.forEach(element => {
-                        toast(element.text);
-                    });
-                    break;
-                    
-                default:
-                    Alert.alert(data.typeResponse, data.message);
-                    break;
-            }
-        }
-
-        setUniversities({ ...universities, data: aux, flag: false });
-    }
-
-    const getQualifications = async (id) => {
-        setQualifications({ ...qualifications, flag: true });
-        const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send('GET', `university/qualification/${id}`, null, token); 
-        let aux = [];
-        
-        if(!data) {
-            Alert.alert('Fatal Error', 'No data from server...');
-            
-        } else { 
-            switch(data.typeResponse) {
-                case 'Success':
-                    toast(data.message); 
-                    aux = data.body;
-                    break;
-
-                case 'Fail':
-                    data.body.errors.forEach(element => {
-                        toast(element.text);
-                    });
-                    break;
-                    
-                default:
-                    Alert.alert(data.typeResponse, data.message);
-                    break;
-            }
-        }
-
-        setQualifications({ ...qualifications, data: aux, flag: false }); 
-    }
-
-    const UniItemC = ({ item }) => (
-        <View style={styles.viewRow}>
-            {
-                (item.img == null)
-                ? <Avatar 
+    const List1 = ({ action1, title, title1 }) => (
+        <View >
+            <View style={{ alignItems: 'center', paddingTop: 10 }}>
+                <Avatar 
+                    onPress={action1}
                     rounded
                     size="medium"
                     containerStyle={{ backgroundColor: 'lightgray' }}
-                    icon={{ name: 'camera-outline', color: 'white', type: 'ionicon', size: 30 }}
+                    icon={{ name: 'camera-outline', color: 'white', type: 'ionicon', size: 40 }} 
                 />
-                : <Avatar 
-                    rounded 
-                    size="medium" 
-                    source={{ uri: `data:image/png;base64,${post.userImg}` }}
-                />
-            }
-            <View style={styles.viewTittleItem}>
-                <Text style={styles.tittleItem}>
-                    {item.name}
-                </Text>
-                <Text style={{ color: "gray" }}>
-                    {item.description}
-                </Text>    
             </View>
-        </View>
-    )
+            <View style={styles.body} >
+                <TextInput style={styles.inputText}
+                    placeholder={title}
 
-    const renderItem = ({ item }) => (
-        <TouchableOpacity 
-            onPress={() => selectItem(item)}
-            style={styles.inputText}
-            >
-            <UniItemC item={item}/>
-        </TouchableOpacity>
-    )
-
-    useEffect(() => { 
-        modeEdit();    
-    }, []); 
-    
-    return (
-        <View style={styles.container}> 
-            <DateTimePickerModal
-                isVisible={dateTimeFlag.flag}
-                mode="date"
-                onConfirm={handlePicker}
-                onCancel={() => setDateTimeFlag({ ...dateTimeFlag, flag: false })}
-            />
-            <SearchBar
-                arrayData={universities.data}
-                vissible={searchFlag.normal}
-                loadingFlag={universities.flag}
-                onCancel={() => setSearchFlag({ ...searchFlag, normal: false })}
-                renderItem={renderItem}
-                searchF={value => searchUniversities(value)}
-            />  
-            <BasicSearchBar
-                 arrayData={qualifications.data}
-                 vissible={searchFlag.basic}
-                 onCancel={() => setSearchFlag({ ...searchFlag, basic: false })}
-                 onPressItem={onPressItemSearchBar.bind(this)}
-            />
-            <View style={[ styles.viewRow, styles.header ]}>
-                <Icon
-                    onPress={() => navigation.goBack()} 
-                    name='close-outline' 
-                    color='gray' 
-                    type='ionicon' 
-                    size={30}
                 />
-                <Text style={{  fontSize: 30 }}>
-                    Qualification 
-                </Text>
-                <TouchableOpacity
-                    style={
-                        (route.params.data) 
-                        ? (  
-                            qualification.universityId != route.params.data.universityId 
-                            || qualification.qualificationId != route.params.data.qualificationId
-                            || qualification.dateInit != route.params.data.dateInit
-                            || qualification.dateEnd != route.params.data.dateEnd
-                            || qualification.averageScore != route.params.data.averageScore 
-                        ) 
-                        ? styles.saveButton
-                        : [styles.saveButton, { borderColor: 'gray' }]
-                        : (qualification.universityId > 0 && qualification.qualificationId > 0 && qualification.dateInit != null)
-                        ? styles.saveButton
-                        : [styles.saveButton, { borderColor: 'gray' }]
-                    }
-                    disabled={
-                        (route.params.data) 
-                        ? (  
-                            qualification.universityId != route.params.data.universityId 
-                            || qualification.qualificationId != route.params.data.qualificationId
-                            || qualification.dateInit != route.params.data.dateInit
-                            || qualification.dateEnd != route.params.data.dateEnd
-                            || qualification.averageScore != route.params.data.averageScore 
-                        ) 
-                        ? false
-                        : true
-                        : (qualification.universityId > 0 && qualification.qualificationId > 0 && qualification.dateInit != null) 
-                        ? false 
-                        : true
-                    }
-                    onPress={handleSendbutton}
-                    >
-                    {
-                        (loading)
-                        ? <ActivityIndicator size="small" color="#00ff00" />
-                        : <Text 
-                            style={
-                                (route.params.data) 
-                                ? (  
-                                    qualification.universityId != route.params.data.universityId 
-                                    || qualification.qualificationId != route.params.data.qualificationId
-                                    || qualification.dateInit != route.params.data.dateInit
-                                    || qualification.dateEnd != route.params.data.dateEnd
-                                    || qualification.averageScore != route.params.data.averageScore 
-                                ) 
-                                ? styles.saveButton
-                                : [styles.saveButton, { borderColor: 'gray' }]
-                                : (qualification.universityId > 0 && qualification.qualificationId > 0 && qualification.dateInit != null)
-                                ? styles.SaveButtonText
-                                : [styles.SaveButtonText, { color: 'gray' }]
-                            }
-                            >
-                            Send
-                        </Text>
-                    }
-                </TouchableOpacity>
-            </View>
-            <View style={styles.body}>
-                <ScrollView>  
-                    <TouchableOpacity
-                        onPress={() => setSearchFlag({ ...searchFlag, normal: true })}
-                        style={styles.inputText}
-                        >
-                        {
-                            (universities.selected != null)
-                            ? <UniItemC item={universities.selected}/>
-                            : <Text style={{ color: 'gray' }}>
-                                University... 
-                            </Text>
-                        }
-                    </TouchableOpacity>  
-                    {
-                        (qualifications.flag && universities.selected != null) 
-                        ? <ActivityIndicator size="small" color="#00ff00" />
-                        : (!qualifications.data.length)
-                        ? null
-                        : <TouchableOpacity
-                            onPress={() => setSearchFlag({ ...searchFlag, basic: true })}
-                            style={styles.inputText}
-                            >
-                            <Text style={{ color: 'gray' }}>
-                                qualifications: {(qualifications.selected != null) ? qualifications.selected.tittle : null} 
-                            </Text>
-                        </TouchableOpacity>
-                    }
-                    <TouchableOpacity
-                        onPress={() => setDateTimeFlag({ flag: true, dateFocus: false })}
-                        style={styles.inputText}
-                        >
-                        <Text style={{ color: 'gray' }}>
-                            Start date: {
-                                (route.params.data)
-                                ? qualification.dateInit.toString().split('T')[0]
-                                : (qualification.dateInit != null) 
-                                ? qualification.dateInit.toString().split(' ').splice(1,3).join('-')
-                                : null
-                            }
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => setDateTimeFlag({ flag: true, dateFocus: true })}
-                        style={styles.inputText}
-                        >
-                        <Text style={{ color: 'gray' }}>
-                            Finish date: {
-                                (qualification.dateEnd == null) 
-                                ? 'Actually'
-                                : (route.params.data)
-                                ? qualification.dateEnd.toString().split('T')[0]
-                                : qualification.dateEnd.toString().split(' ').splice(1,3).join('-')
-                            }
-                        </Text>
-                    </TouchableOpacity> 
-                    <TextInput
-                        placeholder='Average score (optional)'  
-                        keyboardType='numeric'
-                        maxLength={2}
-                        style={styles.inputText}
-                        onChangeText={text => setQualification({ ...qualification, averageScore: text })}
-                        value={qualification.averageScore}
+
+                <View >
+                    <TextInput style={styles.inputText}
+                        placeholder={title1}
                     />
-                </ScrollView> 
+                </View>
+
             </View>
         </View>
     )
+
+    return (
+
+        <View >
+            <View >
+
+                <Component
+                    title="Create Company"
+                    action={gotoCompany}
+                    action1={saveCompany}
+                />
+            </View>
+            <ScrollView>
+                <View >
+
+                    <List1
+                        action1={image}
+                        title="Name"
+                        title1="Description"
+
+                    />
+
+
+                </View>
+
+            </ScrollView>
+        </View>
+    )
+
 };
 
-export default qualification;
+export default Company;
 
 const styles = StyleSheet.create({
-    container: {
+    MainContainer: {
         flex: 1,
-        backgroundColor: 'white',
-    },
+        margin: 10
 
-    viewTittleItem: {
-        paddingLeft: 5, 
-        flex: 1
     },
+    Header: {
 
-    tittleItem: {
-        fontWeight: "bold", 
-        color: "gray", 
-        fontSize: 20
-    },
-
-    viewRow: {
-        alignItems: "center",
-        flexDirection: 'row'
-    },
-
-    header: {
         marginTop: 24,
         backgroundColor: 'white',
         padding: '2%',
-        width:'100%',
+        width: '100%',
         justifyContent: 'space-between',
+        alignItems: "center",
+        paddingHorizontal: 10,
+        flexDirection: 'row',
+
     },
 
+    inputText: {
+        marginTop: 10,
+        padding: 10,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        color: 'gray'
+    },
     saveButton: {
         padding: '2%',
         paddingVertical: '3%',
         borderRadius: 10,
         borderWidth: 1,
         paddingHorizontal: '5%',
-        borderColor: '#3465d9',  
+        borderColor: '#3465d9',
     },
-
-    SaveButtonText: {
-        fontWeight: "bold",
-        color: '#3465d9',
-    },
-
     body: {
-        flex:1,
+        flex: 1,
         paddingHorizontal: '3%',
         backgroundColor: '#f4f6fc'
     },
 
-    inputText: {
-        marginTop: 10, 
-        padding: 10, 
-        backgroundColor:'white', 
-        borderRadius: 10, 
-        color: 'gray'
-    },
+
 });
