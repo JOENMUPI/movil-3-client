@@ -238,11 +238,11 @@ const Connect = ({ navigation, route }) => {
                 <View style={styles.viewList}>
                     <View style={{ justifyContent: 'space-between', paddingEnd: '3%' }}>
                         <Text style={[styles.tittleList]}>
-                            request connect
+                            Request connect
                         </Text>
                     </View>
                     {
-                        (loading.flag)
+                        (loading.flag && loading.first)
                         ? <ActivityIndicator size="large" color="#00ff00" />
                         : (connect.petitions.length < 1)
                         ? <View style={styles.modal}>

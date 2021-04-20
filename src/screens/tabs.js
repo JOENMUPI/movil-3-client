@@ -4,6 +4,7 @@ import { Icon } from 'react-native-elements';
 import Home from './home';
 import Post from './post';
 import Connect from './connect';
+import Companies from './companies';
 
 
 const Tab = createBottomTabNavigator();
@@ -33,6 +34,11 @@ const SCREEN_OPTIONS = ({ route }) => ({
                 ? iconName = 'people-circle'
                 : iconName = 'people-circle-outline';
                 break;
+            case 'Companies':
+                (focused)
+                ? iconName = 'business'
+                : iconName = 'business-outline';
+                break;
         }
         
         return (
@@ -56,6 +62,7 @@ export default function App() {
             <Tab.Screen name="Home" component={Home}/>
             <Tab.Screen name="Connect" component={Connect}/>
             <Tab.Screen name="Post" component={Post}/>
+            <Tab.Screen name="Companies" component={Companies}/>
         </Tab.Navigator>
     );
 }

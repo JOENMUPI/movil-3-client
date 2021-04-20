@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import {
     View,
     Text, TextInput,
-
     StyleSheet
 } from "react-native";
 import { Icon, Avatar, Button } from 'react-native-elements'

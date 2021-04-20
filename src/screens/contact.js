@@ -160,9 +160,8 @@ export default Contact;
 
 export const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#f4f6fc', 
+        backgroundColor: 'white', 
         flex: 1 ,
-        marginTop: 24
     },
 
     item: {
@@ -196,6 +195,7 @@ export const styles = StyleSheet.create({
     },
 
     Header: {
+        marginTop: 24,
         backgroundColor: 'white',
         padding: '2%',
         width: '100%',

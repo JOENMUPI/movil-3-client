@@ -207,7 +207,7 @@ const Home = ({ navigation, route }) => {
                             ) 
                             ? postStyles.SaveButtonText 
                             : [postStyles.SaveButtonText, { color: 'gray' }]
-                            : ((post.tittle.length && (post.description.length || post.img != null)))
+                            : (post.tittle.length && (post.description.length || post.img != null))
                             ? postStyles.SaveButtonText
                             : [postStyles.SaveButtonText, { color: 'gray' }]
                         }

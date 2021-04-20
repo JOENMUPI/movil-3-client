@@ -14,14 +14,18 @@ import Connect from './src/screens/connect';
 import EditUser from './src/screens/editUser';
 import Qualification from './src/screens/qualification';
 import Contact from './src/screens/contact';
+import Enterprise from './src/screens/enterprise';
+import SeeEnterprise from './src/screens/seeEnterprise';
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Test">  
-        <Stack.Screen name="Test" component={Test} options={{ title: "Test", headerShown: false }}></Stack.Screen> 
+      <Stack.Navigator initialRouteName="SignIn">  
+        <Stack.Screen name="Test" component={Test} options={{ title: "Test", headerShown: false }}></Stack.Screen>
+        <Stack.Screen name="SeeEnterprise" component={SeeEnterprise} options={{ title: "SeeEnterprise", headerShown: false }}></Stack.Screen> 
+        <Stack.Screen name="Enterprise" component={Enterprise} options={{ title: "Enterprise", headerShown: false }}></Stack.Screen> 
         <Stack.Screen name="Contact" component={Contact} options={{ title: "Contact", headerShown: false }}></Stack.Screen> 
         <Stack.Screen name="Qualification" component={Qualification} options={{ title: "Qualification", headerShown: false }}></Stack.Screen> 
         <Stack.Screen name="Post" component={Post} options={{ title: "Post", headerShown: false }}></Stack.Screen> 
