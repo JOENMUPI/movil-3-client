@@ -59,15 +59,16 @@ const Home = ({ navigation, route }) => {
     }
 
     const getpost = () => {
-        if(route.params.post) {
-            return route.params.post;
-        
-        } else {
-            return POST_BLANK;
+        if(route.params) {
+            if(route.params.post) {
+                return route.params.post;
+            }
         }
+
+        return POST_BLANK;
     }
 
-    const finishOp = () => {  console.log('holaaaa');
+    const finishOp = () => {  
         setPost(POST_BLANK);
         setLoading(false);
         navigation.goBack();
@@ -89,9 +90,14 @@ const Home = ({ navigation, route }) => {
     }
 
     const handleSendbutton = () => {
-        (route.params.post) 
-        ? sendPost('PUT')
-        : sendPost('POST'); 
+        if(route.params) {
+            (route.params.post) 
+            ? sendPost('PUT')
+            : sendPost('POST');
+        
+        } else {
+            sendPost('POST');
+        }
     }
 
     const sendPost = async (mode) => {   
@@ -106,10 +112,12 @@ const Home = ({ navigation, route }) => {
             switch(data.typeResponse) {
                 case 'Success':
                     toast(data.message); 
-                    (route.params.post) 
-                    ? route.params.callback('update', post)
-                    : route.params.callback('create', data.body);
-                    
+                    if(route.params) {
+                        (route.params.post) 
+                        ? route.params.callback('update', post)  
+                        : route.params.callback('create', data.body);
+                    }
+
                     finishOp();
                     break;
 
@@ -150,14 +158,20 @@ const Home = ({ navigation, route }) => {
                 />
                 <Text style={postStyles.textHeader}>
                     {
-                        (route.params.post)
+                        (!route.params)
+                        ? 'New post'
+                        : (route.params.post)
                         ? 'Edit Post'
                         : 'New post'
                     } 
                 </Text>
                 <TouchableOpacity
                     style={
-                        (route.params.post) 
+                        (!route.params)
+                        ? (post.tittle.length && (post.description.length || post.img != null))
+                        ? postStyles.saveButton
+                        : [postStyles.saveButton, { borderColor: 'gray' }]
+                        : (route.params.post) 
                         ? (
                             (post.tittle.length && (post.description.length || post.img != null))
                             && (
@@ -175,7 +189,11 @@ const Home = ({ navigation, route }) => {
                         : [postStyles.saveButton, { borderColor: 'gray' }]
                     }
                     disabled={
-                        (route.params.post)
+                        (!route.params)
+                        ? !(post.tittle.length && !loading && (post.description.length || post.img != null)) 
+                        ? true 
+                        : false
+                        : (route.params.post)
                         ? (post.tittle.length && !loading && (post.description.length || post.img != null)) 
                         && (
                             post.tittle != route.params.post.tittle 
@@ -194,7 +212,11 @@ const Home = ({ navigation, route }) => {
                     >
                     <Text 
                         style={
-                            (route.params.post) 
+                            (!route.params)
+                            ? (post.tittle.length && (post.description.length || post.img != null))
+                            ? postStyles.SaveButtonText
+                            : [postStyles.SaveButtonText, { color: 'gray' }]
+                            : (route.params.post) 
                             ? (
                                 (post.tittle.length && (post.description.length || post.img != null))
                                 && (
@@ -213,7 +235,9 @@ const Home = ({ navigation, route }) => {
                         }
                         >
                         {
-                            (route.params.post)
+                            (!route.params) 
+                            ? 'Send'
+                            : (route.params.post)
                             ? 'Edit'
                             : 'Send' 
                         }

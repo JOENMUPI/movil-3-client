@@ -26,7 +26,7 @@ const ModalListC = ({ data, vissible, onCancel, addPress, renderItem, tittle }) 
         {
             !(data.length)
             ? <Text style={styles.textMessage}>
-                User without {tittle}
+                Without {tittle}
             </Text>
             : <FlatList
                 style = {styles.list}

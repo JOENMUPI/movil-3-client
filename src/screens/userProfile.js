@@ -140,38 +140,43 @@ const UserProfile = ({ navigation, route }) => {
     }
 
     const handleAddPress = () => { 
-        switch(modalList.tittle) {
-            case 'Awards':
-                setModal({ type: 'award', flag: true, editFlag: false });
-                break;
+        if(user.id != me.id) {
+            Alert.alert('Sorry', "you can't create for other users");
 
-            case 'Idioms':
-                setNewLanguage({ description: '' });
-                setNewLvl({ description: '' });
-                setModal({ type: 'idiom', flag: true, editFlag: false });
-                break;
-                
-            case 'Skills':
-                setModal({ type: 'skill', flag: true, editFlag: false });
-                break;
-
-            case 'Interests':
-                setModal({ type: 'interest', flag: true, editFlag: false });
-                break;
-
-            case 'Qualifications':
-                setModalList({ ...modalList, flag: false });
-                navigation.navigate('Qualification', { callBack: qualificationCallback.bind(this) });
-                break;
-
-            case 'Activities':
-                setModalList({ ...modalList, flag: false });
-                navigation.navigate('Post', { callback: postCallback.bind(this) });
-                break;
-
-            default:
-                Alert.alert('tittle no match', `Error on handlePress "${modalList.tittle}"`);
-                break;
+        } else {
+            switch(modalList.tittle) {
+                case 'Awards':
+                    setModal({ type: 'award', flag: true, editFlag: false });
+                    break;
+    
+                case 'Idioms':
+                    setNewLanguage({ description: '' });
+                    setNewLvl({ description: '' });
+                    setModal({ type: 'idiom', flag: true, editFlag: false });
+                    break;
+                    
+                case 'Skills':
+                    setModal({ type: 'skill', flag: true, editFlag: false });
+                    break;
+    
+                case 'Interests':
+                    setModal({ type: 'interest', flag: true, editFlag: false });
+                    break;
+    
+                case 'Qualifications':
+                    setModalList({ ...modalList, flag: false });
+                    navigation.navigate('Qualification', { callBack: qualificationCallback.bind(this) });
+                    break;
+    
+                case 'Activities':
+                    setModalList({ ...modalList, flag: false });
+                    navigation.navigate('Post', { callback: postCallback.bind(this) });
+                    break;
+    
+                default:
+                    Alert.alert('tittle no match', `Error on handlePress "${modalList.tittle}"`);
+                    break;
+            }
         }
     }
 
@@ -686,7 +691,9 @@ const UserProfile = ({ navigation, route }) => {
     )
 
     const IconOption = ({ item }) => (
-        <Icon
+        (user.id != me.id)
+        ? null
+        : <Icon
             onPress={() => renderItemOptions(item)}
             name='ellipsis-vertical'
             color='gray'
@@ -742,7 +749,7 @@ const UserProfile = ({ navigation, route }) => {
         <View style={userDetailStyles.viewItem}> 
             <View style={userDetailStyles.item}>
                 <TouchableOpacity
-                    onPress={() => hableQualificationTOItem(item)} 
+                    onPress={(user.id == me.id) ? () => hableQualificationTOItem(item) : null} 
                     style={[userDetailStyles.viewRow, { width: '80%' }]}
                     >
                     {
@@ -767,13 +774,17 @@ const UserProfile = ({ navigation, route }) => {
                         {line3ExperienceQualification(item.dateInit, item.dateEnd)}  
                     </View>
                 </TouchableOpacity>
-                <Icon
-                    onPress={() => deleteAlert(() => deleteQualification(item), 'this qualification?')}
-                    name='trash-outline'
-                    color='gray'
-                    type='ionicon'
-                    size={30}
-                />
+                {
+                    (user.id != me.id)
+                    ? null
+                    : <Icon
+                        onPress={() => deleteAlert(() => deleteQualification(item), 'this qualification?')}
+                        name='trash-outline'
+                        color='gray'
+                        type='ionicon'
+                        size={30}
+                    />
+                }
             </View>
         </View>
     )
@@ -1238,7 +1249,11 @@ const UserProfile = ({ navigation, route }) => {
                                         bottomDivider
                                         >
                                         <ListItemWithImgC 
-                                            onPress={() => navigation.navigate('Qualification', { data: item, callBack: qualificationCallback.bind(this) })}
+                                            onPress={
+                                                (user.id == me.id)
+                                                ? () => navigation.navigate('Qualification', { data: item, callBack: qualificationCallback.bind(this) })
+                                                : () => setModalList({ flag: true, tittle: 'Qualifications' })
+                                            }
                                             img={item.img}
                                             tittle={item.universityName}
                                             line2={line2Qualification(item.qualificationName)}
@@ -1294,7 +1309,7 @@ const UserProfile = ({ navigation, route }) => {
                         </View>
                         : <View style={userDetailStyles.viewList}>
                             <Text style={userDetailStyles.tittleList}>
-                                idioms
+                                Idioms
                             </Text>
                             {
                                 user.idioms.map(item => (

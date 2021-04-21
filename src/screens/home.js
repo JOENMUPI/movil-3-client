@@ -31,7 +31,7 @@ const CAMERA_ICON = {
 }
 
 const Home = ({ navigation, route }) => { 
-    const [me, setMe] = useState(null);
+    const [me, setMe] = useState({ img: null });
     const [enterprise, setEnterprise] = useState(false);
     const [posts, setPosts] = useState([]);
     const [searchBar, setSearchBar] = useState(false);
@@ -298,7 +298,7 @@ const Home = ({ navigation, route }) => {
         <View style={homeStyles.container}>
             <View style={[ homeStyles.viewRow, homeStyles.header ]}>
                 {
-                    (me == null)
+                    (me.img == null)
                     ? <Avatar 
                         rounded
                         size="small"
