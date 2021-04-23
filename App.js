@@ -11,6 +11,7 @@ import Share from './src/Screen/Share';
 import Contacts from './src/Screen/Contacts';
 import Company from './src/Screen/Company';
 import Experience from './src/Screen/Experience';
+import CV from './src/Screen/CV';
 
 const Stack = createStackNavigator();
 
@@ -18,6 +19,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
+                <Stack.Screen name="CV" component={CV} options={{ title: "CV", headerShown: false }}></Stack.Screen>
                <Stack.Screen name="Experience" component={Experience} options={{ title: "Experience", headerShown: false }}></Stack.Screen>
               <Stack.Screen name="Company" component={Company} options={{ title: "Company", headerShown: false }}></Stack.Screen>
              <Stack.Screen name=" Contacts" component={Contacts} options={{ title: " Contacts", headerShown: false }}></Stack.Screen>
