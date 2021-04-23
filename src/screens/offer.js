@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
     View,
@@ -7,6 +6,7 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     ToastAndroid,
+    Alert,
     ScrollView,
     StyleSheet
 } from "react-native";
@@ -24,9 +24,9 @@ const OFFER_BLANK = {
     price: null, 
 }
 
-const Offer = ({ navigation, route }) => { route = { params: {} }
+const Offer = ({ navigation, route }) => { 
     const [offer, setOffer] = useState(OFFER_BLANK);
-    const [jobs, setJobs] = useState(/*route.params.jobs*/{ data: [], selected: {} });
+    const [jobs, setJobs] = useState({ data: route.params.jobs, selected: {} });
     const [searchFlag, setSearchFlag] = useState(false);
     const [dateTimeFlag, setDateTimeFlag] = useState(false);
     const [descriptionFlag, setDescriptionFlag] = useState(false);
@@ -64,7 +64,41 @@ const Offer = ({ navigation, route }) => { route = { params: {} }
     }
 
     const sendOffer = async (type) => {
+        setLoading(true);
+        const token = await AsyncStorage.getItem('token');
+        let jsonAux = { ...offer, enterpriseId: route.params.enterpriseId };
 
+        if (type != 'POST') {
+            jsonAux = { ...jsonAux, oldjobId: route.params.data.universityId }
+        }
+
+        const data = await Http.send(type, 'offer', jsonAux, token);
+        
+        if(!data) {
+            Alert.alert('Fatal Error', 'No data from server...');
+            
+        } else { 
+            switch(data.typeResponse) {
+                case 'Success':
+                    toast(data.message); 
+                    (route.params.data) 
+                    ? route.params.callback('update', offer)
+                    : route.params.callback('create', data.body);
+                    
+                    navigation.goBack();                   
+                    break;
+
+                case 'Fail':
+                    data.body.errors.forEach(element => {
+                        toast(element.text);
+                    });
+                    break;
+                    
+                default:
+                    Alert.alert(data.typeResponse, data.message);
+                    break;
+            }
+        }
     }
 
     useEffect(() => { 
@@ -172,7 +206,7 @@ const Offer = ({ navigation, route }) => { route = { params: {} }
                         style={styles.inputText}
                         >
                         <Text style={{ color: 'gray' }}>
-                            Job: {jobs.selected.tittle} 
+                            Job: {jobs.selected.description} 
                         </Text>
                     </TouchableOpacity>
                     <TouchableOpacity

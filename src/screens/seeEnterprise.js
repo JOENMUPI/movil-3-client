@@ -27,7 +27,8 @@ const ENTERPRISE_BLANK = {
     id: 0,
     userId: 0,
     countries: [],
-    jobs: []
+    jobs: [],
+    offers: []
 }
 
 const MODAL_BLANK = {
@@ -95,7 +96,7 @@ const seeEnterprise = ({ navigation, route }) => {
 
     const refresh = () => {
         getEnterprise().then(res => { 
-            setEnterprise(res);
+            setEnterprise({ ...res, offers: [] });
             setLoading({ first: false, loading: false }); 
         });
     }
@@ -103,6 +104,25 @@ const seeEnterprise = ({ navigation, route }) => {
     const callBackEnterprise = (type, data) => { 
         setEnterprise(data);
         route.params.callback(type, data);
+    }
+
+    const callBackOffer = (type, data) => {
+        let newOffers = enterprise.offers;
+
+        if(type == 'create') {
+            newOffers.unshift(data);
+
+        } else {
+            newOffers = enterprise.offers.map(item => {
+                if(item.id == data.id) {
+                    return data;
+                }
+
+                return item
+            });    
+        }
+
+        setEnterprise({ ...enterprise, offers: newOffers });
     }
 
     const handleAddPress = () => { 
@@ -117,6 +137,16 @@ const seeEnterprise = ({ navigation, route }) => {
     
                 case 'Jobs':
                     setModal({ type: 'job', flag: true, editFlag: false });
+                    break;
+
+                case 'Offers':
+                    if (!enterprise.jobs.length) {
+                        Alert.alert('Hey!', 'Jobs are required to create offers!');
+                    
+                    } else {
+                        navigation.navigate('Offer', { callback: callBackOffer.bind(this), jobs: enterprise.jobs });
+                        setModalList({ ...modalList, flag: false });
+                    }
                     break;
     
                 default:
@@ -243,7 +273,7 @@ const seeEnterprise = ({ navigation, route }) => {
             switch(data.typeResponse) {
                 case 'Success':
                     toast(data.message);
-                    let aux = enterprise.jobs; console.log('body');
+                    let aux = enterprise.jobs; 
 
                     aux.unshift(data.body);
                     setEnterprise({ ...enterprise, jobs: aux });
@@ -398,6 +428,12 @@ const seeEnterprise = ({ navigation, route }) => {
         </View>
     )
 
+    const renderOfferItem = ({ item }) => (
+        <View>
+
+        </View>
+    )
+
     const SeeMoreButtonC = ({ action }) => (
         <TouchableOpacity 
             onPress={action}
@@ -498,8 +534,10 @@ const seeEnterprise = ({ navigation, route }) => {
                 renderItem={
                     (modalList.tittle == 'Countries' || modalList.tittle == 'Jobs')
                     ? renderItemModalList
+                    : (modalList.tittle == 'Offers') 
+                    ? renderOfferItem
                     : (modalList.tittle == 'Admins')
-                    ? null// suspendido for de momment
+                    ? null// suspendido for the momment
                     : null
                 } 
                 data={
@@ -507,6 +545,8 @@ const seeEnterprise = ({ navigation, route }) => {
                     ? enterprise.countries
                     : (modalList.tittle == 'Jobs')
                     ? enterprise.jobs
+                    : (modalList.tittle == 'Offers')
+                    ? enterprise.offers
                     : []
                 }
             />
@@ -581,8 +621,40 @@ const seeEnterprise = ({ navigation, route }) => {
                                 enterprise.countries.map((item, index) => (
                                     <ListItemC
                                         key={index}
-                                        bottomDivider={true}
+                                        bottomDivider
                                         action={() => setModalList({ flag: true, tittle: 'Countries' })}
+                                        tittle={item.tittle}
+                                    />
+                                ))
+                            }
+                            <SeeMoreButtonC
+                                action={() => setModalList({ flag: true, tittle: 'Countries' })}
+                            />
+                        </View>
+                    }
+                    {
+                        (enterprise.userId == me.id && enterprise.offers.length < 1) 
+                        ? <View style={styles.viewList}>
+                            <Text style={styles.tittleList}>
+                                Offers
+                            </Text>
+                            <ListItemC
+                                action={() => setModalList({ flag: true, tittle: 'Offers' })}
+                                tittle="Then enterprise don't have job offers in progress"
+                            />
+                        </View>
+                        : (enterprise.offers.length < 1)
+                        ? null
+                        : <View style={styles.viewList}>
+                            <Text style={styles.tittleList}>
+                                Offers
+                            </Text>
+                            {
+                                enterprise.countries.map((item, index) => (
+                                    <ListItemC
+                                        key={index}
+                                        bottomDivider
+                                        action={() => setModalList({ flag: true, tittle: 'Offers' })}
                                         tittle={item.tittle}
                                     />
                                 ))

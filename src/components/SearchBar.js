@@ -9,8 +9,12 @@ const SearchBarC = ({ arrayData, vissible, onCancel, onPressItem }) => {
 
     const searchItems = text => {
         const newData = arrayData.filter(item => {
-            const itemData = `${item.tittle.toUpperCase()}`;
             const textData = text.toUpperCase();
+            let itemData;
+            
+            (item.description)
+            ? itemData = `${item.description.toUpperCase()}`
+            : itemData = `${item.tittle.toUpperCase()}`;
 
             return itemData.indexOf(textData) > -1;
         });
@@ -26,7 +30,13 @@ const SearchBarC = ({ arrayData, vissible, onCancel, onPressItem }) => {
                 style={styles.item}
                 >
                 <View style={styles.viewText}>
-                    <Text style={styles.textItem}>{item.tittle}</Text>
+                    <Text style={styles.textItem}>
+                        {
+                            (item.description)
+                            ? item.description
+                            : item.tittle
+                        }
+                    </Text>
                 </View>
             </TouchableOpacity>
         </View>
