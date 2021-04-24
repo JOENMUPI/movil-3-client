@@ -27,13 +27,12 @@ const EXPERIENCE_BLANK = {
     enterprise: { name: '', img: null }
 }
 
-const Experience = ({ navigation, route }) => { route = { params: { } }
+const Experience = ({ navigation, route }) => { 
     const [experience, setExperience] = useState(EXPERIENCE_BLANK);
     const [search, setSearch] = useState({ data: [], flag: false });
     const [dateTimeFlag, setDateTimeFlag] = useState({ flag: false, dateFocus: false });
     const [searchFlag, setSearchFlag] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [me, setMe] = useState({ id: 0 });
 
 
     const toast = (message) => { 
@@ -51,10 +50,6 @@ const Experience = ({ navigation, route }) => { route = { params: { } }
         } else {
             return date.toString().split(' ').splice(1,3).join('-'); 
         }
-    }
-
-    const getMe = async () => {
-        return JSON.parse(await AsyncStorage.getItem('user'));
     }
 
     const handlePicker = (date) => { 
@@ -218,7 +213,6 @@ const Experience = ({ navigation, route }) => { route = { params: { } }
     )
 
     useEffect(() => {
-        getMe().then(res => setMe(res)); 
         modeEdit();    
     }, []); 
 

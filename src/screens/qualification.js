@@ -51,10 +51,46 @@ const qualification = ({ navigation, route }) => {
         );
     }
 
+    const checkDate = () => {  
+        if (qualification.dateEnd == null) {
+            return true;
+            
+        } else {
+            const dateInit = new Date(qualification.dateInit); 
+            const dateEnd = new Date(qualifications.dateEnd);
+            
+            if(dateEnd.getFullYear() < dateInit.getFullYear()) {
+                return false;
+            
+            } else { 
+                if(dateEnd.getMonth() < dateInit.getMonth() && dateEnd.getFullYear() == dateInit.getFullYear()) {
+                    return false;
+                
+                } else { 
+                    if(dateEnd.getDate() <= dateInit.getDate() && dateEnd.getMonth() == dateInit.getMonth()) {
+                        return false;
+                    
+                    } else {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+
     const handleSendbutton = () => { 
-        (route.params.data) 
-        ? sendQualification('PUT')
-        : sendQualification('POST'); 
+        if(new Date(qualification.dateInit) > new Date()) {
+            Alert.alert('Hey!', 'Start date > present, this is impossible!');
+
+        } else if(!checkDate()) { 
+            Alert.alert('Hey!', 'Start date > end date, this is impossible!');
+        
+        } else {
+            (route.params.data) 
+            ? sendQualification('PUT')
+            : sendQualification('POST'); 
+        }
     }
 
     const handlePicker = (date) => { 

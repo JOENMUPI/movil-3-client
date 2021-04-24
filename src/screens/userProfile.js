@@ -173,7 +173,7 @@ const UserProfile = ({ navigation, route }) => {
                     navigation.navigate('Post', { callback: postCallback.bind(this) });
                     break;
 
-                case 'Expereiences':
+                case 'Experiences':
                     navigation.navigate('Experience', { callback: expCallback.bind(this) });
                     setModalList({ ...modalList, flag: false });
                     break;
@@ -332,7 +332,7 @@ const UserProfile = ({ navigation, route }) => {
     }
 
     const deleteIdiom = (idiomObj) => { 
-        const idioms = user.idioms.filter(i => i.id != idiomObj.id);
+        const idioms = user.idioms.filter(i => i != idiomObj);
 
         setUser({ ...user, idioms });
         sendData('DELETE', `language/${idiomObj.id}`, null);
@@ -345,11 +345,18 @@ const UserProfile = ({ navigation, route }) => {
         sendData('PUT', 'user/field/interest', { data: interest });
     }
 
-    const deleteExperience = (Obj) => {
-        const experiences = user.experiences.filter(i => i.id != Obj.id);
+    const deleteExperience = (item) => {
+        const experiences = user.experiences.filter(i => i != item);
 
         setUser({ ...user, experiences });
-        sendData('DELETE', 'experience', obj);
+        sendData('DELETE', `experience/${item.id}`, null);
+    }
+
+    const deleteQualification = (item) => {
+        let newQualifications = user.qualifications.filter(i => i != item); 
+
+        setUser({ ...user, qualifications: newQualifications });
+        sendData('DELETE', `qualification/user/${item.qualificationId}/${item.universityId}`, null);
     }
 
     const deleteAlert = (pressOk, tittle) => {
@@ -428,20 +435,6 @@ const UserProfile = ({ navigation, route }) => {
                     }
                 );
                 break;
-
-            case 'Experiences': 
-                bsoAux = handleBottomSheetOptions(
-                    item.description,
-                    () => {
-                        navigation.navigate('Experiences', { data: item, callback: expCallback.bind(this) });
-                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false }); 
-                    },
-                    () => {
-                        deleteAlert(() => deleteExperience(item), item.job);
-                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
-                    }
-                );
-                break;
                 
             default:
                 Alert.alert('tittle no match', `Error on renderItemOptions "${modalList.tittle}"`);
@@ -456,7 +449,7 @@ const UserProfile = ({ navigation, route }) => {
     }
 
     const refresh = () => {
-        getUser().then(res => {  
+        getUser().then(res => {
             setUser(res);
             setLoading({ first: false, loading: false }); 
         });
@@ -563,7 +556,7 @@ const UserProfile = ({ navigation, route }) => {
             switch(data.typeResponse) {
                 case 'Success':
                     toast(data.message);               
-                    return test(data.body);
+                    return data.body;
 
                 case 'Fail':
                     data.body.errors.forEach(element => {
@@ -666,37 +659,6 @@ const UserProfile = ({ navigation, route }) => {
                     break;
             }
         } 
-    }
-
-    const deleteQualification = async (item) => {      
-        const token = await AsyncStorage.getItem('token'); 
-        const data = await Http.send('DELETE', `qualification/user/${item.qualificationId}/${item.universityId}`, null, token);
-        
-        if(!data) {
-            Alert.alert('Fatal Error', 'No data from server...');
-
-        } else { 
-            switch(data.typeResponse) {
-                case 'Success': 
-                    toast(data.message);  
-                    let newQualifications = user.qualifications.filter(i => 
-                        i.universityId != item.universityId && i.qualificationId != item.qualificationId
-                    );
-                    
-                    setUser({ ...user, qualifications: newQualifications });
-                    break;
-            
-                case 'Fail':
-                    data.body.errors.forEach(element => {
-                        toast(element.text);
-                    });
-                    break;
-
-                default:
-                    Alert.alert(data.typeResponse, data.message);
-                    break;
-            }
-        }
     }
 
     const sendData = async (type, endpoint,body) => {
@@ -879,15 +841,16 @@ const UserProfile = ({ navigation, route }) => {
         <View style={userDetailStyles.viewItem}> 
             <View style={userDetailStyles.item}>
                 <TouchableOpacity
-                    onPress={() => console.log('npi q hacer cuando lo presiones')} 
-                    style={[userDetailStyles.viewRow, userDetailStyles.fill]}
+                    onPress={() => navigation.navigate('Experience', { data: item, callback: expCallback.bind(this) })} 
+                    style={[userDetailStyles.viewRow, { width: '80%' }]}
                     >
                     {
                         (item.img == null)
                         ? <Avatar 
-                            rounded 
-                            source={{ uri: `data:image/png;base64,${user.img}` }}
-                            size="medium" 
+                            rounded
+                            size="medium"
+                            containerStyle={{ backgroundColor: 'lightgray' }}
+                            icon={{ name: 'camera-outline', color: 'white', type: 'ionicon', size: 40 }} 
                         />
                         : <Image
                             source={{ uri: `data:image/png;base64,${item.img}` }}
@@ -896,12 +859,23 @@ const UserProfile = ({ navigation, route }) => {
                     }
                     <View style={userDetailStyles.viewLinesItem}>
                         <Text style={userDetailStyles.tittleItem}>
-                            {item.tittle} 
+                            {item.job} 
                         </Text>
-                        {line2Activity(item.dateCreation, item.dateEdit)}
-                        {line3Activity(item.reactions, item.commentaries, item.commentFlag)}  
+                        {line2Experience(item.enterprise.name, item.typeJob)}
+                        {line3ExperienceQualification(item.dateInit, item.dateEnd)}  
                     </View>
                 </TouchableOpacity>
+                {
+                    (user.id != me.id)
+                    ? null
+                    : <Icon
+                        onPress={() => deleteAlert(() => deleteExperience(item), item.job)}
+                        name='trash-outline'
+                        color='gray'
+                        type='ionicon'
+                        size={30}
+                    />
+                }
             </View>
         </View>
     )
@@ -1052,14 +1026,6 @@ const UserProfile = ({ navigation, route }) => {
 
         refresh(); 
     }, []);
-
-    const test = (userAux) => {
-        return { 
-            ...userAux, 
-            experiences: EXPERIENCE_BASE,
-        }; 
-    }
-
     
     return (
         <View style={userDetailStyles.container}>
@@ -1358,8 +1324,18 @@ const UserProfile = ({ navigation, route }) => {
                         </View> 
                     } 
                     { 
-                        (user.experiences.length < 1)
-                        ? null
+                        (user.id == me.id && user.experiences.length < 1)
+                        ? <View style={userDetailStyles.viewList}>
+                            <Text style={userDetailStyles.tittleList}>
+                                Experiences
+                            </Text>
+                            <ListItem>
+                                <ListItemC
+                                    action={() => navigation.navigate('Experience', { callBack: expCallback.bind(this) })}
+                                    tittle='No have experience? Write one!'
+                                />
+                            </ListItem>
+                        </View>
                         : <View style={userDetailStyles.viewList}>
                             <Text style={userDetailStyles.tittleList}>
                                 Experiences
@@ -1371,10 +1347,15 @@ const UserProfile = ({ navigation, route }) => {
                                         bottomDivider
                                         >
                                         <ListItemWithImgC 
-                                            onPress={() => setModalList({ flag: true, tittle: 'Experiences' })}
-                                            img={item.img}
+                                            onPress={
+                                                (user.id == me.id)
+                                                ? () => navigation.navigate('Experience', { data: item, callBack: expCallback.bind(this) })
+                                                : () => setModalList({ flag: true, tittle: 'Experiences' })
+                                                
+                                            }
+                                            img={item.enterprise.img}
                                             tittle={item.job}
-                                            line2={line2Experience(item.enterprise, item.typeJob)}
+                                            line2={line2Experience(item.enterprise.name, item.typeJob)}
                                             line3={line3ExperienceQualification(item.dateInit, item.dateEnd)}
                                         />
                                     </ListItem>
