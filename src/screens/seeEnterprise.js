@@ -94,9 +94,9 @@ const seeEnterprise = ({ navigation, route }) => {
         sendData('POST', 'country/enterprise', { enterpriseId: enterprise.id, countryId: item.id });
     }
 
-    const refresh = () => {
+    const refresh = () => { 
         getEnterprise().then(res => { 
-            setEnterprise({ ...res, offers: [] });
+            setEnterprise(res);
             setLoading({ first: false, loading: false }); 
         });
     }
@@ -106,7 +106,7 @@ const seeEnterprise = ({ navigation, route }) => {
         route.params.callback(type, data);
     }
 
-    const callBackOffer = (type, data) => {
+    const callBackOffer = (type, data) => { console.log(type, data);
         let newOffers = enterprise.offers;
 
         if(type == 'create') {
@@ -144,7 +144,14 @@ const seeEnterprise = ({ navigation, route }) => {
                         Alert.alert('Hey!', 'Jobs are required to create offers!');
                     
                     } else {
-                        navigation.navigate('Offer', { callback: callBackOffer.bind(this), jobs: enterprise.jobs });
+                        navigation.navigate(
+                            'Offer', 
+                            { 
+                                callback: callBackOffer.bind(this), 
+                                jobs: enterprise.jobs, 
+                                enterpriseId: enterprise.id, 
+                            }
+                        );
                         setModalList({ ...modalList, flag: false });
                     }
                     break;
@@ -153,6 +160,15 @@ const seeEnterprise = ({ navigation, route }) => {
                     Alert.alert('tittle no match', `Error on handlePress "${modalList.tittle}"`);
                     break;
             }
+        }
+    }
+
+    const hanbleDate = (date) => {
+        if (date.toString().indexOf('Z') != -1) {
+            return date.toString().split('T')[0];
+
+        } else {
+            return date.toString().split(' ').splice(1,3).join('-'); 
         }
     }
 
@@ -192,6 +208,30 @@ const seeEnterprise = ({ navigation, route }) => {
                     },
                     () => {
                         deleteAlert(item.description, () => deleteJob(item));
+                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
+                    }
+                );
+                break;
+
+            case 'Offers':               
+                bsoAux = handleBottomSheetOptions(
+                    item.description,
+                    () => { 
+                        navigation.navigate(
+                            'Offer',
+                            {
+                                data: item, 
+                                enterpriseId: enterprise.id,
+                                jobs: enterprise.jobs,
+                                callback: callBackOffer.bind(this)
+                            }
+                        ); 
+                         
+                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false }); 
+                        setModal({ ...modal, flag: false });
+                    },
+                    () => {
+                        deleteAlert(item.description, () => deleteOffer(item));
                         setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
                     }
                 );
@@ -259,6 +299,13 @@ const seeEnterprise = ({ navigation, route }) => {
 
         setEnterprise({ ...enterprise, jobs: jobsAux });
         sendData('DELETE', `job/${item.id}`, null);
+    }
+
+    const deleteOffer = (item) => {
+        const jobsAux = enterprise.offers.filter(i => i.id != item.id);
+
+        setEnterprise({ ...enterprise, offers: jobsAux });
+        sendData('DELETE', `offer/enterprise/${item.id}`, null);
     }
 
     const sendNewJob = async (body) => {
@@ -382,7 +429,7 @@ const seeEnterprise = ({ navigation, route }) => {
         } 
     }
 
-    const ListItemC = ({ tittle, action, bottomDivider }) => (
+    const ListItemC = ({ tittle, line2, line31, line32, action, bottomDivider }) => (
         <ListItem bottomDivider={bottomDivider | false}>   
             <TouchableOpacity
                 style={{ width: '100%' }}
@@ -391,6 +438,20 @@ const seeEnterprise = ({ navigation, route }) => {
                 <Text style={styles.tittleItem}>
                     {tittle}
                 </Text>
+                {
+                    (!line2)
+                    ? null
+                    : <Text style={{ color: 'gray' }}>
+                        {line2}
+                    </Text>
+                }
+                {
+                    !(line31 && line32)
+                    ? null
+                    : <Text style={{ color: 'gray' }}>
+                        Date: {hanbleDate(line31)} {(line32 != null) ? ` Price: $${line32}` : null}
+                    </Text>
+                }
             </TouchableOpacity>
         </ListItem>
     )
@@ -429,8 +490,32 @@ const seeEnterprise = ({ navigation, route }) => {
     )
 
     const renderOfferItem = ({ item }) => (
-        <View>
-
+        <View style={styles.viewItem}>
+            <View style={styles.item}>
+                <View style={{ width: '80%' }}>
+                    <Text style={{ fontSize: 15 }}>
+                        {item.tittle}
+                    </Text>
+                    <Text style={{ fontSize: 15, color: 'gray' }}>
+                        {item.job.description}
+                    </Text>
+                    <Text style={{ fontSize: 15, color: 'gray' }}>
+                        Date: {hanbleDate(item.dateExp)} {(item.price != null) ? ` Price: $${item.price}` : null}
+                    </Text>
+                </View> 
+                {
+                    (enterprise.userId != me.id)
+                    ? null
+                    : <Icon
+                        onPress={() => renderItemOptions(item)}
+                        name='ellipsis-vertical'
+                        color='gray'
+                        type='ionicon'
+                        size={30}
+                    />
+                } 
+            </View>
+            
         </View>
     )
 
@@ -650,17 +735,30 @@ const seeEnterprise = ({ navigation, route }) => {
                                 Offers
                             </Text>
                             {
-                                enterprise.countries.map((item, index) => (
+                                enterprise.offers.map((item, index) => (
                                     <ListItemC
                                         key={index}
                                         bottomDivider
-                                        action={() => setModalList({ flag: true, tittle: 'Offers' })}
+                                        action={
+                                            () => navigation.navigate(
+                                                'Offer',
+                                                {
+                                                    data: item, 
+                                                    enterpriseId: enterprise.id,
+                                                    jobs: enterprise.jobs,
+                                                    callback: callBackOffer.bind(this)
+                                                }
+                                            ) 
+                                        }
                                         tittle={item.tittle}
+                                        line2={item.job.description}
+                                        line31={item.dateExp}
+                                        line32={item.price}
                                     />
                                 ))
                             }
                             <SeeMoreButtonC
-                                action={() => setModalList({ flag: true, tittle: 'Countries' })}
+                                action={() => setModalList({ flag: true, tittle: 'Offers' })}
                             />
                         </View>
                     }

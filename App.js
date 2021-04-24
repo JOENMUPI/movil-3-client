@@ -17,6 +17,7 @@ import Contact from './src/screens/contact';
 import Enterprise from './src/screens/enterprise';
 import SeeEnterprise from './src/screens/seeEnterprise';
 import Offer from './src/screens/offer';
+import Experience from './src/screens/experience';
 
 const Stack = createStackNavigator();
 
@@ -25,6 +26,7 @@ export default function App() {
     <NavigationContainer>
       <Stack.Navigator initialRouteName="SignIn">  
         <Stack.Screen name="Test" component={Test} options={{ title: "Test", headerShown: false }}></Stack.Screen>
+        <Stack.Screen name="Experience" component={Experience} options={{ title: "Experience", headerShown: false }}></Stack.Screen>
         <Stack.Screen name="Offer" component={Offer} options={{ title: "Offer", headerShown: false }}></Stack.Screen>
         <Stack.Screen name="SeeEnterprise" component={SeeEnterprise} options={{ title: "SeeEnterprise", headerShown: false }}></Stack.Screen> 
         <Stack.Screen name="Enterprise" component={Enterprise} options={{ title: "Enterprise", headerShown: false }}></Stack.Screen> 

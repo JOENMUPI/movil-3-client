@@ -172,6 +172,11 @@ const UserProfile = ({ navigation, route }) => {
                     setModalList({ ...modalList, flag: false });
                     navigation.navigate('Post', { callback: postCallback.bind(this) });
                     break;
+
+                case 'Expereiences':
+                    navigation.navigate('Experience', { callback: expCallback.bind(this) });
+                    setModalList({ ...modalList, flag: false });
+                    break;
     
                 default:
                     Alert.alert('tittle no match', `Error on handlePress "${modalList.tittle}"`);
@@ -340,6 +345,13 @@ const UserProfile = ({ navigation, route }) => {
         sendData('PUT', 'user/field/interest', { data: interest });
     }
 
+    const deleteExperience = (Obj) => {
+        const experiences = user.experiences.filter(i => i.id != Obj.id);
+
+        setUser({ ...user, experiences });
+        sendData('DELETE', 'experience', obj);
+    }
+
     const deleteAlert = (pressOk, tittle) => {
         setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
         Alert.alert(
@@ -416,6 +428,20 @@ const UserProfile = ({ navigation, route }) => {
                     }
                 );
                 break;
+
+            case 'Experiences': 
+                bsoAux = handleBottomSheetOptions(
+                    item.description,
+                    () => {
+                        navigation.navigate('Experiences', { data: item, callback: expCallback.bind(this) });
+                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false }); 
+                    },
+                    () => {
+                        deleteAlert(() => deleteExperience(item), item.job);
+                        setBottomSheetFlag({ ...bottomSheetFlag, flag: false });
+                    }
+                );
+                break;
                 
             default:
                 Alert.alert('tittle no match', `Error on renderItemOptions "${modalList.tittle}"`);
@@ -466,6 +492,34 @@ const UserProfile = ({ navigation, route }) => {
         }
 
         setUser({ ...user, activities: postAux });
+    }
+
+    const expCallback = (type, data) => {
+        let expAux = [];
+        
+        switch(type) {
+            case 'create': 
+                expAux = user.experiences; 
+                expAux.unshift(data);                
+                break;
+
+            case 'update':
+                postAux = user.experiences.map(item => {
+                    if(data.id == item.id) {
+                        return data;
+                    
+                    } else {
+                        return item;
+                    }
+                });
+                break;
+
+            default:
+                Alert.alert('Error on type of callback');
+                break;
+        }
+
+        setUser({ ...user, experiences: expAux });
     }
 
     const qualificationCallback = (type, data) => {
@@ -799,6 +853,38 @@ const UserProfile = ({ navigation, route }) => {
                     {
                         (item.img == null)
                         ? <Avatar 
+                            rounded
+                            size="medium"
+                            containerStyle={{ backgroundColor: 'lightgray' }}
+                            icon={{ name: 'camera-outline', color: 'white', type: 'ionicon', size: 40 }} 
+                        />
+                        : <Image
+                            source={{ uri: `data:image/png;base64,${item.img}` }}
+                            containerStyle={{ borderRadius: 5, width: 55, height: 55, resizeMode: 'contain', marginTop: 10 }}
+                        />
+                    }
+                    <View style={userDetailStyles.viewLinesItem}>
+                        <Text style={userDetailStyles.tittleItem}>
+                            {item.tittle} 
+                        </Text>
+                        {line2Activity(item.dateCreation, item.dateEdit)}
+                        {line3Activity(item.reactions, item.commentaries, item.commentFlag)}  
+                    </View>
+                </TouchableOpacity>
+            </View>
+        </View>
+    )
+
+    const renderItemExperiences = ({ item }) => ( 
+        <View style={userDetailStyles.viewItem}> 
+            <View style={userDetailStyles.item}>
+                <TouchableOpacity
+                    onPress={() => console.log('npi q hacer cuando lo presiones')} 
+                    style={[userDetailStyles.viewRow, userDetailStyles.fill]}
+                    >
+                    {
+                        (item.img == null)
+                        ? <Avatar 
                             rounded 
                             source={{ uri: `data:image/png;base64,${user.img}` }}
                             size="medium" 
@@ -1090,6 +1176,8 @@ const UserProfile = ({ navigation, route }) => {
                     ? renderItemQualification
                     : (modalList.tittle == 'Activities')
                     ? renderItemActivities
+                    : (modalList.tittle == 'Experiences')
+                    ? renderItemExperiences
                     : null
                 }
                 
@@ -1106,6 +1194,8 @@ const UserProfile = ({ navigation, route }) => {
                     ? user.qualifications
                     : (modalList.tittle == 'Activities')
                     ? user.activities
+                    : (modalList.tittle == 'Experiences')
+                    ? user.experiences
                     : []
                 }
             />
@@ -1281,6 +1371,7 @@ const UserProfile = ({ navigation, route }) => {
                                         bottomDivider
                                         >
                                         <ListItemWithImgC 
+                                            onPress={() => setModalList({ flag: true, tittle: 'Experiences' })}
                                             img={item.img}
                                             tittle={item.job}
                                             line2={line2Experience(item.enterprise, item.typeJob)}

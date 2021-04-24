@@ -22,6 +22,8 @@ const OFFER_BLANK = {
     description: '',
     dateExp: null,
     price: null, 
+    jobId: 0,
+    enterpriseId: 0
 }
 
 const Offer = ({ navigation, route }) => { 
@@ -40,16 +42,49 @@ const Offer = ({ navigation, route }) => {
         );
     }
 
+    const checkDate = () => {  
+        const now = new Date(); 
+        let aux;
+
+        (route.params.data) 
+        ? aux = new Date(offer.dateExp)
+        : aux = offer.dateExp;
+
+        if(aux.getFullYear() < now.getFullYear()) {
+            return false;
+        
+        } else { 
+            if(aux.getMonth() < now.getMonth() && aux.getFullYear() == now.getFullYear()) {
+                return false;
+            
+            } else { 
+                if(aux.getDate() <= now.getDate() && aux.getMonth() == now.getMonth()) {
+                    return false;
+                
+                } else {
+                    return true;
+                }
+            }
+        }
+    }
+
     const modeEdit = () => {
-        if (route.params.data) {
-            setOffer(route.params.data);
+        if(route.params.data) {
+            (route.params.data.price)
+            ? setOffer({ ...route.params.data, price: route.params.data.price.toString() })
+            : setOffer(route.params.data);
         }
     }
 
     const handleSendbutton = () => { 
-        (route.params.data) 
-        ? sendOffer('PUT')
-        : sendOffer('POST'); 
+        if(!checkDate()) { 
+            Alert.alert('Hey!', 'Only future dates allowed!');
+        
+        } else {
+            (route.params.data) 
+            ? sendOffer('PUT')
+            : sendOffer('POST');
+        }
     }
 
     const handlePicker = (date) => { 
@@ -59,15 +94,15 @@ const Offer = ({ navigation, route }) => {
 
     const onPressItemSearchBar = (item) => {
         setSearchFlag(false);
-        setOffer({ ...offer, job: item.id });
+        setOffer({ ...offer, jobId: item.id });
         setJobs({ ...jobs, selected: item }); 
     }
 
-    const sendOffer = async (type) => {
+    const sendOffer = async (type) => { 
         setLoading(true);
         const token = await AsyncStorage.getItem('token');
-        let jsonAux = { ...offer, enterpriseId: route.params.enterpriseId };
-
+        let jsonAux = { ...offer, enterpriseId: route.params.enterpriseId, price: parseFloat(offer.price) };
+        
         if (type != 'POST') {
             jsonAux = { ...jsonAux, oldjobId: route.params.data.universityId }
         }
@@ -82,8 +117,8 @@ const Offer = ({ navigation, route }) => {
                 case 'Success':
                     toast(data.message); 
                     (route.params.data) 
-                    ? route.params.callback('update', offer)
-                    : route.params.callback('create', data.body);
+                    ? route.params.callback('update', { ...offer, job: jobs.selected })
+                    : route.params.callback('create', { ...data.body, job: jobs.selected });
                     
                     navigation.goBack();                   
                     break;
@@ -138,29 +173,33 @@ const Offer = ({ navigation, route }) => {
                     onPress={handleSendbutton}
                     style={
                         (route.params.data) 
-                        ? (  
-                            offer.tittle != route.params.data.tittle 
-                            || offer.description != route.params.data.description
-                            || offer.dateExp != route.params.data.dateExp
-                            || offer.price != route.params.data.price
-                        ) 
+                        ? (offer.tittle.length && offer.description.length) && 
+                            (  
+                                offer.tittle != route.params.data.tittle 
+                                || offer.description != route.params.data.description
+                                || offer.dateExp != route.params.data.dateExp
+                                || offer.price != route.params.data.price
+                                || offer.jobId != route.params.data.jobId
+                            ) 
                         ? styles.saveButton
                         : [styles.saveButton, { borderColor: 'gray' }]
-                        : (offer.tittle.length && offer.description.length && offer.dateExp != null)
+                        : (offer.tittle.length && offer.description.length && offer.dateExp != null && offer.jobId > 0)
                         ? styles.saveButton
                         : [styles.saveButton, { borderColor: 'gray' }]
                     }
                     disabled={
                         (route.params.data) 
-                        ? (  
-                            offer.tittle != route.params.data.tittle 
-                            || offer.description != route.params.data.description
-                            || offer.dateExp != route.params.data.dateExp
-                            || offer.price != route.params.data.price
-                        ) 
+                        ? (offer.tittle.length && offer.description.length && !loading) && 
+                            (  
+                                offer.tittle != route.params.data.tittle 
+                                || offer.description != route.params.data.description
+                                || offer.dateExp != route.params.data.dateExp
+                                || offer.price != route.params.data.price
+                                || offer.jobId != route.params.data.jobId
+                            ) 
                         ? false
                         : true
-                        : (offer.tittle.length && offer.description.length && offer.dateExp != null)
+                        : (offer.tittle.length && offer.description.length && offer.dateExp != null && offer.jobId > 0 && !loading)
                         ? false 
                         : true
                     }
@@ -171,15 +210,17 @@ const Offer = ({ navigation, route }) => {
                         : <Text 
                             style={
                                 (route.params.data) 
-                                ? (  
-                                    offer.tittle != route.params.data.tittle 
-                                    || offer.description != route.params.data.description
-                                    || offer.dateExp != route.params.data.dateExp
-                                    || offer.price != route.params.data.price
-                                ) 
+                                ? (offer.tittle.length && offer.description.length) && 
+                                    (  
+                                        offer.tittle != route.params.data.tittle 
+                                        || offer.description != route.params.data.description
+                                        || offer.dateExp != route.params.data.dateExp
+                                        || offer.price != route.params.data.price
+                                        || offer.jobId != route.params.data.jobId
+                                    ) 
                                 ? styles.SaveButtonText
                                 : [styles.SaveButtonText, { color: 'gray' }]
-                                : (offer.tittle.length && offer.description.length && offer.dateExp != null)
+                                : (offer.tittle.length && offer.description.length && offer.dateExp != null && offer.jobId > 0)
                                 ? styles.SaveButtonText
                                 : [styles.SaveButtonText, { color: 'gray' }]
                             }
